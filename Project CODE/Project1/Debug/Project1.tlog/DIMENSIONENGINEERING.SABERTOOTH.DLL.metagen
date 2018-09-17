@@ -1,0 +1,123 @@
+ImageRuntimeVersion: v2.0.50727
+Assembly DimensionEngineering.Sabertooth, Version=1.6.*, Culture=Invariant Language (Invariant Country): 
+	hash=SHA1, flags=PublicKey
+Assembly mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Class DimensionEngineering.Sabertooth: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :DimensionEngineering.SerialMotorDriver
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(System.String, Int32): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(Int32, System.String, Int32): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Properties:
+    Int32 Address 'get set' : 
+  Methods:
+    AutoBaud(Stream, Boolean): PrivateScope, Public, Static, HideBySig
+    AutoBaud(Stream): PrivateScope, Public, Static, HideBySig
+    AutoBaud(SerialPort, Boolean): PrivateScope, Public, Static, HideBySig
+    AutoBaud(SerialPort): PrivateScope, Public, Static, HideBySig
+    AutoBaud(Boolean(Optional)): PrivateScope, Public, HideBySig
+    AutoBaud(): PrivateScope, Public, HideBySig
+    Command(Int32, Int32): PrivateScope, Public, HideBySig
+    Motor(Int32, Int32): PrivateScope, Public, HideBySig
+    Motor(Int32): PrivateScope, Public, HideBySig
+    Drive(Int32): PrivateScope, Public, HideBySig
+    Turn(Int32): PrivateScope, Public, HideBySig
+    Stop(): PrivateScope, Public, HideBySig
+    SetMinVoltage(Int32): PrivateScope, Public, HideBySig
+    SetMaxVoltage(Int32): PrivateScope, Public, HideBySig
+    SetBaudRate(Int32): PrivateScope, Public, HideBySig
+    SetDeadband(Int32): PrivateScope, Public, HideBySig
+    SetRamping(Int32): PrivateScope, Public, HideBySig
+    SetTimeout(Int32): PrivateScope, Public, HideBySig
+    get_Address(): PrivateScope, Public, HideBySig, SpecialName
+    set_Address(Int32): PrivateScope, Public, HideBySig, SpecialName
+Class DimensionEngineering.SabertoothSimplified: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :DimensionEngineering.SerialMotorDriver
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(System.String, Int32): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Methods:
+    Motor(Int32, Int32): PrivateScope, Public, HideBySig
+    Motor(Int32): PrivateScope, Public, HideBySig
+    Drive(Int32): PrivateScope, Public, HideBySig
+    Turn(Int32): PrivateScope, Public, HideBySig
+    Stop(): PrivateScope, Public, HideBySig
+Class DimensionEngineering.SerialMotorDriver: AutoLayout, AnsiClass, Class, Public, Abstract, BeforeFieldInit
+  Interfaces:
+    System.IDisposable
+  Properties:
+    Boolean IsOpen 'get ' : 
+    System.IO.Stream Port 'get ' : 
+  Methods:
+    Close(): PrivateScope, Public, HideBySig
+    Open(String, Int32): PrivateScope, Public, HideBySig
+    Open(SerialPort): PrivateScope, Public, HideBySig
+    Open(SerialPort, Boolean): PrivateScope, Public, HideBySig
+    Open(Stream): PrivateScope, Public, HideBySig
+    Open(Stream, Boolean): PrivateScope, Public, HideBySig
+    get_IsOpen(): PrivateScope, Public, HideBySig, SpecialName
+    get_Port(): PrivateScope, Public, HideBySig, SpecialName
+Class DimensionEngineering.SyRenSimplified: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :DimensionEngineering.SerialMotorDriver
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(System.String, Int32): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Methods:
+    Motor(Int32, Int32): PrivateScope, Public, HideBySig
+    Motor(Int32): PrivateScope, Public, HideBySig
+    Stop(): PrivateScope, Public, HideBySig
+Class DimensionEngineering.UsbSabertooth: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(DimensionEngineering.UsbSabertoothSerial): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    Int32 GetTimedOut = -2147483648 : Public, Static, Literal, HasDefault
+  Properties:
+    Int32 Address 'get set' : 
+    DimensionEngineering.UsbSabertoothSerial Connection 'get set' : 
+    Int32 GetRetryInterval 'get set' : 
+    Int32 GetTimeout 'get set' : 
+    Boolean UsingCrc 'get set' : 
+  Methods:
+    Command(Byte, Byte[]): PrivateScope, Public, HideBySig
+    Command(Byte, Byte): PrivateScope, Public, HideBySig
+    Motor(Int32, Int32): PrivateScope, Public, HideBySig
+    Motor(Int32): PrivateScope, Public, HideBySig
+    Power(Int32, Int32): PrivateScope, Public, HideBySig
+    Power(Int32): PrivateScope, Public, HideBySig
+    Drive(Int32): PrivateScope, Public, HideBySig
+    Turn(Int32): PrivateScope, Public, HideBySig
+    Freewheel(Int32, Int32): PrivateScope, Public, HideBySig
+    Freewheel(Int32, Boolean): PrivateScope, Public, HideBySig
+    Freewheel(Int32): PrivateScope, Public, HideBySig
+    Freewheel(Boolean): PrivateScope, Public, HideBySig
+    ShutDown(Char, Int32, Boolean): PrivateScope, Public, HideBySig
+    Set(Char, Int32, Int32): PrivateScope, Public, HideBySig
+    SetCurrentLimit(Int32, Int32): PrivateScope, Public, HideBySig
+    SetCurrentLimit(Int32): PrivateScope, Public, HideBySig
+    SetRamping(Int32, Int32): PrivateScope, Public, HideBySig
+    SetRamping(Int32): PrivateScope, Public, HideBySig
+    SetTimeout(Int32): PrivateScope, Public, HideBySig
+    KeepAlive(): PrivateScope, Public, HideBySig
+    Get(Char, Int32): PrivateScope, Public, HideBySig
+    GetBattery(Int32, Boolean): PrivateScope, Public, HideBySig
+    GetBattery(Int32): PrivateScope, Public, HideBySig
+    GetCurrent(Int32, Boolean): PrivateScope, Public, HideBySig
+    GetCurrent(Int32): PrivateScope, Public, HideBySig
+    GetTemperature(Int32, Boolean): PrivateScope, Public, HideBySig
+    GetTemperature(Int32): PrivateScope, Public, HideBySig
+    GetSpecial(Char, Int32, Int32): PrivateScope, Public, HideBySig
+    FromHidStream(Stream): PrivateScope, Public, Static, HideBySig
+    get_Address(): PrivateScope, Public, HideBySig, SpecialName
+    set_Address(Int32): PrivateScope, Public, HideBySig, SpecialName
+    get_Connection(): PrivateScope, Public, HideBySig, SpecialName
+    set_Connection(UsbSabertoothSerial): PrivateScope, Public, HideBySig, SpecialName
+    get_GetRetryInterval(): PrivateScope, Public, HideBySig, SpecialName
+    set_GetRetryInterval(Int32): PrivateScope, Public, HideBySig, SpecialName
+    get_GetTimeout(): PrivateScope, Public, HideBySig, SpecialName
+    set_GetTimeout(Int32): PrivateScope, Public, HideBySig, SpecialName
+    get_UsingCrc(): PrivateScope, Public, HideBySig, SpecialName
+    set_UsingCrc(Boolean): PrivateScope, Public, HideBySig, SpecialName
+Class DimensionEngineering.UsbSabertoothSerial: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :DimensionEngineering.SerialMotorDriver
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(System.String, Int32): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName

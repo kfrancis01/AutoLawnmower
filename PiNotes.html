@@ -1,0 +1,56 @@
+<!doctype html public "-//justme">
+<html>
+    <head>
+        <title>Raspberry Pi(RPi) Notes</title>
+        <style type="text/css" >
+ .red {
+     color: red;
+ }
+        </style>
+    </head>
+    <body>
+        <h1>Project help thoughts from a 38 year CS veteran</h1>
+            <p>If all of your team is already familiar with tools that fits your project needs then by all meanns use them, but what I am suggesting here are for those not familiar with any of the needed tools or if the team is familiar with dissimilar tools. I highly recommmend using the same tools across the entire team.</p>
+            <p>I say this after having been a pure developer using C/C++/assembler/Pascal/Fortran/Java and other languages for over 25 years and having been a successful project manager directing a dozen developers for over 13 years.</p>
+        <h1>Important hardware damage avoidance</h1>
+            <h2>POWER SUPPLY</h2>
+            <p>The Raspberry Pi 3 is powered by a +5.1V micro USB supply. Exactly how much current (mA) the Raspberry Pi requires is dependent on what you connect to it. We have found that purchasing a 2.5A power supply from a reputable retailer will provide you with ample power to run your Raspberry Pi. You can purchase the official Raspberry Pi Power Supply from our website, and you can learn more about the differing power requirements of the various models of the Raspberry Pi on our FAQ page.</p>
+
+            <p>Typically, the model B uses between 700-1000mA depending on what peripherals are connected; the model A can use as little as 500mA with no peripherals attached. The maximum power the Raspberry Pi can use is 1 Amp. If you need to connect a USB device that will take the power requirements above 1 Amp, then you must connect it to an externally-powered USB hub.</p>
+
+            <p>The power requirements of the Raspberry Pi increase as you make use of the various interfaces on the Raspberry Pi. The GPIO pins can draw 50mA safely, distributed across all the pins; an individual GPIO pin can only safely draw 16mA. The HDMI port uses 50mA, the camera module requires 250mA, and keyboards and mice can take as little as 100mA or over 1000mA! Check the power rating of the devices you plan to connect to the Pi and purchase a power supply accordingly.</p>
+
+            <h3 class="red">Backpowering</h3>
+                <p>Backpowering occurs when USB hubs do not provide a diode to stop the hub from powering against the host computer. Other hubs will provide as much power as you want out each port. Please also be aware that some hubs will backfeed the Raspberry Pi. This means that the hubs will power the Raspberry Pi through its USB cable input cable, without the need for a separate micro-USB power cable, and bypass the voltage protection. If you are using a hub that backfeeds to the Raspberry Pi and the hub experiences a power surge, your Raspberry Pi could potentially be damaged.</p>
+        <h1>Development concerns between Windows and Raspbian OS</h1>
+            <p>These notes are mostly for non-CS students</p>
+            <h2>IDEs</h2>
+                <p>If you are going to go back and forth between Windows and Raspbian when editing and building and testing your apps and are not familiar with IDEs in general or at all I recommend using a single cross platform IDE so the environment for your development is consistent in either OS and your learning curve is reduced.</p>
+                <p>Here's a short list of IDE/development editors to consider:</p>
+                <ol>
+                    <li><a href="https://sourceforge.net/projects/codeblocks/">Code::Blocks</a>(v16.02, open source) - RECOMMENDED: available for both Raspbian and Windows. Can do the compiling for you on either platform. use apt-get on RPi to installl.</li>
+                    <li><a href="https://visualstudio.microsoft.com/vs/community/">Visual Studio Community</a>(Microsoft) - very capable/power/complex IDE and can do cross platform development, <b>not available on Raspbian</b> so a separate MAKE file will be required on Raspbian OS.</li>
+                    <li><a href="http://www.jedit.org/">jEdit</a> - a decent cross platform simple code editor for Windows and RPi(runs under Java).  Can be extended to compile for C, but not it's forte.</li>
+                    <li><a href="https://www.geany.org/">Geany</a> - a decent RPi specific editor and IDE. comes pre-loaded on full Raspbian OS. Not available on Windows.</li>
+                </ol>
+            <h2>Source code management between multiple developers</h2>
+                <p><b>The importance of this topic to your project can not be over stated</b> as your work will be spread over a period of months. There are free and open source options for this that can keep everyone's code synchronized with each other, THIS IS VERY CRITICAL.</p>
+                <p>I recommend using Subversion(SVN) or GIT(RECOMMENDED).  There are client tools available for both Windows and Raspbian OS. Either will also require a code repository available to all team members. </p>
+                <p>Links to various resources, short list:</p>
+                <ul>
+                    <li><a href="https://en.wikipedia.org/wiki/Apache_Subversion">Subversion</a> - a traditional client/server option, easy load on RPi.</li>
+                    <li><a href="https://en.wikipedia.org/wiki/Git">GIT</a> - a distributed repository option, yet free servers are available, command prompt/BASH text client comes already pre-loaded on RPi.</li>
+                    <li><a href="https://www.visualsvn.com/server/">VisualSVNServer</a> - Windows based SVN repository you load  and run on your code server yourself</li>
+                    <li><a href="https://riouxsvn.com/">RiouxSVN<a> - a free SVN repository service, your own SVN server not required!</li>
+                    <li><a href="https://gitextensions.github.io/">Git Extensions</a> for Windows</li>
+                    <li><a href="https://bitbucket.org/product/pricing">Bit Bucket</a> offers a free Git Server for 5 user option. 1GB limit for free</li>
+                </ul>
+            <h2>Compilers</h2>
+                <p>GNU C and C++ compilers come pre-loaded on RPi, use it.</p>
+            <h2>Building processes</h2>
+                <p>Various IDEs can handle the build process itself for you, but varies by IDE.  <a href="https://en.wikipedia.org/wiki/Make_(software)">MAKE (read this if unfamiliar)</a> is the traditional C specific build tool and comes on RPi. Make syntax is fairly simple, as far as these things go, I recommend using it for the project on Windows and RPi.</p>
+            <h2>Debugging</h2>
+                <p>Debugging can be challenging for any team and any environment. Building your app from scratch with built-in testing routines &amp; methods can simplify and streamline your efforts. Understanding and using a symbolic debugger can be invaluable when odd runtime errors occur. Learn the use of the GNU debugger <a href="https://www.gnu.org/software/gdb/">here</a>.</p>
+    </body>
+</html>
+

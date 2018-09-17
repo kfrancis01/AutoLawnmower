@@ -1,0 +1,764 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>DimensionEngineering.Sabertooth</name>
+    </assembly>
+    <members>
+        <member name="T:DimensionEngineering.Sabertooth">
+            <summary>
+            Controls a Sabertooth or SyRen motor driver running in Packet Serial mode.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:DimensionEngineering.Sabertooth"/> class.
+            The driver address is set to 128. Be sure to call <see cref="M:DimensionEngineering.SerialMotorDriver.Open(System.String,System.Int32)"/>.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.#ctor(System.String,System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:DimensionEngineering.Sabertooth"/> class.
+            The driver address is set to 128. The specified serial port is opened.
+            </summary>
+            <param name="portName">The port to open.</param>
+            <param name="baudRate">The baud rate to use. The factory default is 9600.</param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.#ctor(System.Int32,System.String,System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:DimensionEngineering.Sabertooth"/> class.
+            The driver address is set to the value given, and the specified serial port is opened.
+            </summary>
+            <param name="address">The driver address.</param>
+            <param name="portName">The port to open.</param>
+            <param name="baudRate">The baud rate to use.</param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.AutoBaud(System.IO.Stream,System.Boolean)">
+            <summary>
+            Sends the autobaud character.
+            </summary>
+            <param name="port">The stream to write to.</param>
+            <param name="doNotWait">If false, a delay is added to give the driver time to start up.</param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.AutoBaud(System.IO.Stream)">
+            <summary>
+            Sends the autobaud character.
+            </summary>
+            <param name="port">The stream to write to.</param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.AutoBaud(System.IO.Ports.SerialPort,System.Boolean)">
+            <summary>
+            Sends the autobaud character.
+            </summary>
+            <param name="port">The serial port to send to.</param>
+            <param name="doNotWait">If false, a delay is added to give the driver time to start up.</param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.AutoBaud(System.IO.Ports.SerialPort)">
+            <summary>
+            Sends the autobaud character.
+            </summary>
+            <param name="port">The serial port to send to.</param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.AutoBaud(System.Boolean)">
+            <summary>
+            Sends the autobaud character.
+            </summary>
+            <param name="doNotWait">If false, a delay is added to give the driver time to start up.</param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.AutoBaud">
+            <summary>
+            Sends the autobaud character.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.Command(System.Int32,System.Int32)">
+            <summary>
+            Sends a Packet Serial command to the motor driver.
+            </summary>
+            <param name="command">The number of the command.</param>
+            <param name="value">The command's value.</param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.Motor(System.Int32,System.Int32)">
+            <summary>
+            Sets the power of the specified motor.
+            </summary>
+            <param name="motorNumber">The motor number, 1 or 2.</param>
+            <param name="power">The power, between -127 and 127.</param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.Motor(System.Int32)">
+            <summary>
+            Sets the power of motor 1.
+            </summary>
+            <param name="power">The power, between -127 and 127.</param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.Drive(System.Int32)">
+            <summary>
+            Sets the driving power.
+            </summary>
+            <param name="power">The power, between -127 and 127.</param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.Turn(System.Int32)">
+            <summary>
+            Sets the turning power.
+            </summary>
+            <param name="power">The power, between -127 and 127.</param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.Stop">
+            <summary>
+            Stops.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.SetMinVoltage(System.Int32)">
+            <summary>
+            Sets the minimum voltage.
+            </summary>
+            <param name="value">
+            The voltage. The units of this value are driver-specific and are specified
+            in the Packet Serial chapter of the driver's user manual.
+            </param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.SetMaxVoltage(System.Int32)">
+            <summary>
+            Sets the maximum voltage.
+            Maximum voltage is stored in EEPROM, so changes persist between power cycles.
+            </summary>
+            <param name="value">
+            The voltage. The units of this value are driver-specific and are specified
+            in the Packet Serial chapter of the driver's user manual.
+            </param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.SetBaudRate(System.Int32)">
+            <summary>
+            Sets the baud rate.
+            Baud rate is stored in EEPROM, so changes persist between power cycles.
+            </summary>
+            <param name="baudRate">The baud rate. This can be 2400, 9600, 19200, 38400, or on some drivers 115200.</param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.SetDeadband(System.Int32)">
+            <summary>
+            Sets the deadband.
+            Deadband is stored in EEPROM, so changes persist between power cycles.
+            </summary>
+            <param name="value">
+            The deadband value.
+            Motor powers in the range [-deadband, deadband] will be considered in the deadband, and will
+            not prevent the driver from entering nor cause the driver to leave an idle brake state.
+            0 resets to the default, which is 3.
+            </param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.SetRamping(System.Int32)">
+            <summary>
+            Sets the ramping.
+            Ramping is stored in EEPROM, so changes persist between power cycles.
+            </summary>
+            <param name="value">The ramping value. Consult the user manual for possible values.</param>
+        </member>
+        <member name="M:DimensionEngineering.Sabertooth.SetTimeout(System.Int32)">
+            <summary>
+            Sets the serial timeout.
+            </summary>
+            <param name="milliseconds">
+            The maximum time in milliseconds between packets. If this time is exceeded,
+            the driver will stop the motors. This value is rounded up to the nearest 100 milliseconds.
+            This library assumes the command value is in units of 100 milliseconds. This is true for
+            most drivers, but not all. Check the Packet Serial chapter of the driver's user manual
+            to make sure.
+            </param>
+        </member>
+        <member name="P:DimensionEngineering.Sabertooth.Address">
+            <summary>
+            Gets or sets the driver address. The default is 128.
+            </summary>
+        </member>
+        <member name="T:DimensionEngineering.SabertoothSimplified">
+            <summary>
+            Controls a Sabertooth motor driver running in Simplified Serial mode.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.SabertoothSimplified.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:DimensionEngineering.SabertoothSimplified"/> class.
+            Be sure to call <see cref="M:DimensionEngineering.SerialMotorDriver.Open(System.String,System.Int32)"/>.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.SabertoothSimplified.#ctor(System.String,System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:DimensionEngineering.SabertoothSimplified"/> class.
+            The specified serial port is opened.
+            </summary>
+            <param name="portName">The port to open.</param>
+            <param name="baudRate">The baud rate to use.</param>
+        </member>
+        <member name="M:DimensionEngineering.SabertoothSimplified.Motor(System.Int32,System.Int32)">
+            <summary>
+            Sets the power of the specified motor.
+            </summary>
+            <param name="motorNumber">The motor number, 1 or 2.</param>
+            <param name="power">The power, between -127 and 127.</param>
+        </member>
+        <member name="M:DimensionEngineering.SabertoothSimplified.Motor(System.Int32)">
+            <summary>
+            Sets the power of motor 1.
+            </summary>
+            <param name="power">The power, between -127 and 127.</param>
+        </member>
+        <member name="M:DimensionEngineering.SabertoothSimplified.Drive(System.Int32)">
+            <summary>
+            Sets the driving power.
+            </summary>
+            <param name="power">The power, between -127 and 127.</param>
+        </member>
+        <member name="M:DimensionEngineering.SabertoothSimplified.Turn(System.Int32)">
+            <summary>
+            Sets the turning power.
+            </summary>
+            <param name="power">The power, between -127 and 127.</param>
+        </member>
+        <member name="M:DimensionEngineering.SabertoothSimplified.Stop">
+            <summary>
+            Stops.
+            </summary>
+        </member>
+        <member name="T:DimensionEngineering.SerialMotorDriver">
+            <summary>
+            Supports the serial motor driver classes.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.SerialMotorDriver.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:DimensionEngineering.SerialMotorDriver"/> class.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.SerialMotorDriver.Close">
+            <summary>
+            Closes the serial port, if the instance has ownership of it.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.SerialMotorDriver.Open(System.String,System.Int32)">
+            <summary>
+            Opens the specified serial port.
+            </summary>
+            <param name="portName">The port to open.</param>
+            <param name="baudRate">The baud rate to use.</param>
+        </member>
+        <member name="M:DimensionEngineering.SerialMotorDriver.Open(System.IO.Ports.SerialPort)">
+            <summary>
+            Uses an already-opened serial port.
+            </summary>
+            <param name="port">The port to use.</param>
+        </member>
+        <member name="M:DimensionEngineering.SerialMotorDriver.Open(System.IO.Ports.SerialPort,System.Boolean)">
+            <summary>
+            Uses an already-opened serial port, and optionally takes ownership of it.
+            </summary>
+            <param name="port">The port to use.</param>
+            <param name="takeOwnership">Whether to take ownership of the port. If true, calls to <see cref="M:DimensionEngineering.SerialMotorDriver.Close"/> will close the port.</param>
+        </member>
+        <member name="M:DimensionEngineering.SerialMotorDriver.Open(System.IO.Stream)">
+            <summary>
+            Uses an already-open stream.
+            </summary>
+            <param name="stream">The stream to use.</param>
+        </member>
+        <member name="M:DimensionEngineering.SerialMotorDriver.Open(System.IO.Stream,System.Boolean)">
+            <summary>
+            Uses an already-open stream, and optionally takes ownership of it.
+            </summary>
+            <param name="stream">The stream to use.</param>
+            <param name="takeOwnership">Whether to take ownership of the port. If true, calls to <see cref="M:DimensionEngineering.SerialMotorDriver.Close"/> will close the stream.</param>
+        </member>
+        <member name="P:DimensionEngineering.SerialMotorDriver.IsOpen">
+            <summary>
+            Gets whether the serial port is open.
+            </summary>
+        </member>
+        <member name="P:DimensionEngineering.SerialMotorDriver.Port">
+            <summary>
+            Gets the serial port being used.
+            </summary>
+        </member>
+        <member name="T:DimensionEngineering.SyRenSimplified">
+            <summary>
+            Controls a SyRen motor driver running in Simplified Serial mode.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.SyRenSimplified.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:DimensionEngineering.SyRenSimplified"/> class.
+            Be sure to call <see cref="M:DimensionEngineering.SerialMotorDriver.Open(System.String,System.Int32)"/>.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.SyRenSimplified.#ctor(System.String,System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:DimensionEngineering.SyRenSimplified"/> class.
+            The specified serial port is opened.
+            </summary>
+            <param name="portName">The port to open.</param>
+            <param name="baudRate">The baud rate to use.</param>
+        </member>
+        <member name="M:DimensionEngineering.SyRenSimplified.Motor(System.Int32,System.Int32)">
+            <summary>
+            Sets the power of the specified motor.
+            </summary>
+            <param name="motorNumber">The motor number, 1.</param>
+            <param name="power">The power, between -127 and 127.</param>
+        </member>
+        <member name="M:DimensionEngineering.SyRenSimplified.Motor(System.Int32)">
+            <summary>
+            Sets the power of the motor.
+            </summary>
+            <param name="power">The power, between -127 and 127.</param>
+        </member>
+        <member name="M:DimensionEngineering.SyRenSimplified.Stop">
+            <summary>
+            Stops.
+            </summary>
+        </member>
+        <member name="T:DimensionEngineering.UsbSabertooth">
+            <summary>
+            Controls a USB-enabled Sabertooth motor driver running in Packet Serial mode.
+            </summary>
+        </member>
+        <member name="F:DimensionEngineering.UsbSabertooth.GetTimedOut">
+            <summary>
+            Get requests return this value if they time out.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:DimensionEngineering.UsbSabertooth"/> class.
+            The driver address is set to 128. Be sure to set <see cref="P:DimensionEngineering.UsbSabertooth.Connection"/>.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.#ctor(DimensionEngineering.UsbSabertoothSerial)">
+            <summary>
+            Initializes a new instance of the <see cref="T:DimensionEngineering.UsbSabertooth"/> class.
+            The driver address is set to 128. The specified serial connection is used.
+            </summary>
+            <param name="connection">The serial connection to use.</param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.Command(System.Byte,System.Byte[])">
+            <summary>
+            Sends a multibyte packet serial command to the motor driver.
+            </summary>
+            <param name="command">The number of the command.</param>
+            <param name="value">The command's value.</param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.Command(System.Byte,System.Byte)">
+            <summary>
+            Sends a packet serial command to the motor driver.
+            </summary>
+            <param name="command">The number of the command.</param>
+            <param name="value">The command's value.</param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.Motor(System.Int32,System.Int32)">
+            <summary>
+            Controls the specified motor output.
+            In User Mode, this sets M1 or M2.
+            </summary>
+            <param name="motorOutputNumber">
+            The motor output number, 1 or 2.
+            You can also use a character, such as '3', to select the
+            motor output by its Plain Text Serial address.
+            </param>
+            <param name="value">The value, between -2047 and 2047.</param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.Motor(System.Int32)">
+            <summary>
+            Controls motor output 1.
+            In User Mode, this sets M1.
+            </summary>
+            <param name="value">The value, between -2047 and 2047.</param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.Power(System.Int32,System.Int32)">
+            <summary>
+            Controls the specified power output, if the power output is configured as a controllable output.
+            In User Mode, this sets P1 or P2.
+            </summary>
+            <param name="powerOutputNumber">
+            The power output number, 1 or 2.
+            You can also use a character, such as '3', to select the
+            power output by its Plain Text Serial address.
+            </param>
+            <param name="value">The value, between -2047 and 2047.</param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.Power(System.Int32)">
+            <summary>
+            Controls power output 1, if power output 1 is configured as a controllable output.
+            In User Mode, this sets P1.
+            </summary>
+            <param name="value">The value, between -2047 and 2047.</param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.Drive(System.Int32)">
+            <summary>
+            Controls the mixed-mode drive channel.
+            In User Mode, this sets MD.
+            </summary>
+            <param name="value">The value, between -2047 and 2047.</param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.Turn(System.Int32)">
+            <summary>
+            Controls the mixed-mode turn channel.
+            In User Mode, this sets MT.
+            </summary>
+            <param name="value">The value, between -2047 and 2047.</param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.Freewheel(System.Int32,System.Int32)">
+            <summary>
+            Causes the specified motor output to freewheel.
+            In User Mode, this sets Q1 or Q2.
+            </summary>
+            <param name="motorOutputNumber">
+            The motor output number, 1 or 2.
+            You can also use a character, such as '3', to select the
+            motor output by its Plain Text Serial address.
+            </param>
+            <param name="value">
+            A positive value lets the motor output freewheel.
+            A negative or zero value stops the freewheeling.
+            </param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.Freewheel(System.Int32,System.Boolean)">
+            <summary>
+            Causes the specified motor output to freewheel.
+            In User Mode, this sets Q1 or Q2.
+            </summary>
+            <param name="motorOutputNumber">
+            The motor output number, 1 or 2.
+            You can also use a character, such as '3', to select the
+            motor output by its Plain Text Serial address.
+            </param>
+            <param name="value">
+            <c>true</c> lets the motor output freewheel.
+            <c>false</c> stops the freewheeling.
+            </param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.Freewheel(System.Int32)">
+            <summary>
+            Causes motor output 1 to freewheel.
+            In User Mode, this sets Q1.
+            </summary>
+            <param name="value">
+            A positive value lets the motor outputs freewheel.
+            A negative or zero value stops the freewheeling.
+            </param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.Freewheel(System.Boolean)">
+            <summary>
+            Causes motor output 1 to freewheel.
+            In User Mode, this sets Q1.
+            </summary>
+            <param name="value">
+            <c>true</c> lets the motor outputs freewheel.
+            <c>false</c> stops the freewheeling.
+            </param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.ShutDown(System.Char,System.Int32,System.Boolean)">
+            <summary>
+            Shuts down an output.
+            </summary>
+            <param name="type">
+            The type of output to shut down. This can be
+            'M' (motor output) or
+            'P' (power output).
+            </param>
+            <param name="number">
+            The number of the output, 1 or 2.
+            You can also use a character, such as '3', to select by
+            Plain Text Serial address.
+            </param>
+            <param name="value">
+            <c>true</c> sets the shutdown.
+            <c>false</c> clears the shutdown.
+            </param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.Set(System.Char,System.Int32,System.Int32)">
+            <summary>
+            Sets a value on the motor driver.
+            </summary>
+            <param name="type">
+            The type of channel to set. This can be
+            'M' (motor output),
+            'P' (power output),
+            'Q' (freewheel),
+            'R' (ramping), or
+            'T' (current limit).
+            </param>
+            <param name="number">
+            The number of the channel, 1 or 2.
+            You can also use a character, such as '3', to select by
+            Plain Text Serial address.
+            </param>
+            <param name="value">
+            The value, between -16383 and 16383
+            (though in many cases, only -2047 to 2047 are meaningful).
+            </param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.SetCurrentLimit(System.Int32,System.Int32)">
+            <summary>
+            Sets the current limit for the specified motor output.
+            In User Mode, this sets T1 or T2.
+            2014-06-09 and newer firmwares support changing the current limit while running.
+            </summary>
+            <param name="motorOutputNumber">
+            The motor output number, 1 or 2.
+            You can also use a character, such as '3', to select the
+            motor output by its Plain Text Serial address.
+            </param>
+            <param name="value">
+            The current limit.
+            2048 corresponds to 100 amps. For example, 655 is 32 amps.
+            Any negative number will use the default limit.
+            </param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.SetCurrentLimit(System.Int32)">
+            <summary>
+            Sets the current limit for all motor outputs.
+            In User Mode, this sets T1 and T2.
+            2014-06-09 and newer firmwares support changing the current limit while running.
+            </summary>
+            <param name="value">
+            The current limit.
+            2048 corresponds to 100 amps. For example, 655 is 32 amps.
+            Any negative number will use the default limit.
+            </param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.SetRamping(System.Int32,System.Int32)">
+            <summary>
+            Sets the ramping for the specified motor output.
+            In User Mode, this sets R1 or R2.
+            </summary>
+            <param name="motorOutputNumber">
+            The motor output number, 1 or 2.
+            You can also use a character, such as '3', to select the
+            motor output by its Plain Text Serial address.
+            </param>
+            <param name="value">The ramping value, between -16383 (fast) and 2047 (slow).</param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.SetRamping(System.Int32)">
+            <summary>
+            Sets the ramping for all motor outputs.
+            In User Mode, this sets R1 and R2.
+            </summary>
+            <param name="value">The ramping value, between -16383 (fast) and 2047 (slow).</param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.SetTimeout(System.Int32)">
+            <summary>
+            Sets the serial timeout.
+            </summary>
+            <param name="milliseconds">
+            The maximum time in milliseconds between packets.
+            If this time is exceeded, the driver will stop the
+            motor and power outputs.
+            A value of zero uses the DEScribe setting. <see cref="F:System.Threading.Timeout.Infinite"/> disables the timeout.
+            </param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.KeepAlive">
+            <summary>
+            Resets the serial timeout.
+            This is done automatically any time a motor output is set.
+            You can, however, call this if you don't want to set any motor outputs.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.Get(System.Char,System.Int32)">
+            <summary>
+            Gets a value from the motor driver.
+            </summary>
+            <param name="type">
+            The type of channel to get from. This can be
+            'S' (signal),
+            'A' (aux),
+            'M' (motor output), or
+            'P' (power output).
+            </param>
+            <param name="number">
+            The number of the channel, 1 or 2.
+            You can also use a character, such as '3', to select by
+            Plain Text Serial address.
+            </param>
+            <returns>The value, or <see cref="F:DimensionEngineering.UsbSabertooth.GetTimedOut"/>.</returns>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.GetBattery(System.Int32,System.Boolean)">
+            <summary>
+            Gets the battery voltage.
+            </summary>
+            <param name="motorOutputNumber">
+            The number of the motor output, 1 or 2.
+            You can also use a character, such as '3', to select by
+            Plain Text Serial address.
+            </param>
+            <param name="unscaled">If true, gets in unscaled units. If false, gets in scaled units.</param>
+            <returns>The value, or <see cref="F:DimensionEngineering.UsbSabertooth.GetTimedOut"/>.</returns>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.GetBattery(System.Int32)">
+            <summary>
+            Gets the battery voltage.
+            </summary>
+            <param name="motorOutputNumber">
+            The number of the motor output, 1 or 2.
+            You can also use a character, such as '3', to select by
+            Plain Text Serial address.
+            </param>
+            <returns>The value, or <see cref="F:DimensionEngineering.UsbSabertooth.GetTimedOut"/>.</returns>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.GetCurrent(System.Int32,System.Boolean)">
+            <summary>
+            Gets the motor output current.
+            </summary>
+            <param name="motorOutputNumber">
+            The number of the motor output, 1 or 2.
+            You can also use a character, such as '3', to select by
+            Plain Text Serial address.
+            </param>
+            <param name="unscaled">If true, gets in unscaled units. If false, gets in scaled units.</param>
+            <returns>The value, or <see cref="F:DimensionEngineering.UsbSabertooth.GetTimedOut"/>.</returns>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.GetCurrent(System.Int32)">
+            <summary>
+            Gets the motor output current.
+            </summary>
+            <param name="motorOutputNumber">
+            The number of the motor output, 1 or 2.
+            You can also use a character, such as '3', to select by
+            Plain Text Serial address.
+            </param>
+            <returns>The value, or <see cref="F:DimensionEngineering.UsbSabertooth.GetTimedOut"/>.</returns>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.GetTemperature(System.Int32,System.Boolean)">
+            <summary>
+            Gets the motor output temperature.
+            </summary>
+            <param name="motorOutputNumber">
+            The number of the motor output, 1 or 2.
+            You can also use a character, such as '3', to select by
+            Plain Text Serial address.
+            </param>
+            <param name="unscaled">If true, gets in unscaled units. If false, gets in scaled units.</param>
+            <returns>The value, or <see cref="F:DimensionEngineering.UsbSabertooth.GetTimedOut"/>.</returns>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.GetTemperature(System.Int32)">
+            <summary>
+            Gets the motor output temperature.
+            </summary>
+            <param name="motorOutputNumber">
+            The number of the motor output, 1 or 2.
+            You can also use a character, such as '3', to select by
+            Plain Text Serial address.
+            </param>
+            <returns>The value, or <see cref="F:DimensionEngineering.UsbSabertooth.GetTimedOut"/>.</returns>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.GetSpecial(System.Char,System.Int32,System.Int32)">
+            <summary>
+            Gets a special value from the motor driver.
+            </summary>
+            <param name="type">The type of channel to get from.</param>
+            <param name="number">The number of the channel.</param>
+            <param name="getType">The get type.</param>
+            <returns>The value, or <see cref="F:DimensionEngineering.UsbSabertooth.GetTimedOut"/>.</returns>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertooth.FromHidStream(System.IO.Stream)">
+            <summary>
+            Initializes a new instance of the <see cref="T:DimensionEngineering.UsbSabertooth"/> class
+            that communicates over the USB HID protocol.
+            </summary>
+            <param name="hidStream">A raw USB HID stream from the HidSharp library.</param>
+            <returns>The new <see cref="T:DimensionEngineering.UsbSabertooth"/> instance.</returns>
+        </member>
+        <member name="P:DimensionEngineering.UsbSabertooth.Address">
+            <summary>
+            Gets or sets the driver address. The default is 128.
+            </summary>
+        </member>
+        <member name="P:DimensionEngineering.UsbSabertooth.Connection">
+            <summary>
+            Gets or sets the serial connection being used.
+            </summary>
+        </member>
+        <member name="P:DimensionEngineering.UsbSabertooth.GetRetryInterval">
+            <summary>
+            Gets or sets the get retry interval, in milliseconds.
+            </summary>
+        </member>
+        <member name="P:DimensionEngineering.UsbSabertooth.GetTimeout">
+            <summary>
+            Gets or sets the get timeout, in milliseconds.
+            </summary>
+        </member>
+        <member name="P:DimensionEngineering.UsbSabertooth.UsingCrc">
+            <summary>
+            Gets whether CRC-protected commands are used. They are, by default.
+            </summary>
+        </member>
+        <member name="T:DimensionEngineering.UsbSabertoothSerial">
+            <summary>
+            Create a UsbSabertoothSerial for the serial port you are using.
+            Then, attach a <see cref="T:DimensionEngineering.UsbSabertooth"/> for each motor driver.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertoothSerial.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:DimensionEngineering.UsbSabertoothSerial"/> class.
+            Be sure to call <see cref="M:DimensionEngineering.SerialMotorDriver.Open(System.String,System.Int32)"/>.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertoothSerial.#ctor(System.String,System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:DimensionEngineering.UsbSabertoothSerial"/> class.
+            The specified serial port is opened.
+            </summary>
+            <param name="portName">The port to open.</param>
+            <param name="baudRate">The baud rate to use. The factory default is 9600.</param>
+        </member>
+        <member name="T:DimensionEngineering.UsbSabertoothTimeout">
+            <summary>
+            Encapsulates a starting time and duration.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertoothTimeout.#ctor(System.Int32)">
+            <summary>
+            Constructs a UsbSabertoothTimeout object. The starting time is captured.
+            </summary>
+            <param name="timeoutMS">The timeout duration, in milliseconds.</param>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertoothTimeout.Expire">
+            <summary>
+            Causes the timeout to expire immediately.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertoothTimeout.Reset">
+            <summary>
+            Captures the current time and uses it as the new starting time for the timeout.
+            </summary>
+        </member>
+        <member name="P:DimensionEngineering.UsbSabertoothTimeout.CanExpire">
+            <summary>
+            Gets whether the timeout can expire.
+            If the UsbSabertoothTimeout was created with a timeout of <see cref="F:System.Threading.Timeout.Infinite"/>, it cannot expire.
+            </summary>
+        </member>
+        <member name="P:DimensionEngineering.UsbSabertoothTimeout.Expired">
+            <summary>
+            Gets whether the timeout expired.
+            </summary>
+        </member>
+        <member name="P:DimensionEngineering.UsbSabertoothTimeout.TimeLeft">
+            <summary>
+            Gets the time left before expiration, or <see cref="F:System.Threading.Timeout.Infinite"/> if the timeout cannot expire.
+            </summary>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertoothTimeout.op_LessThan(DimensionEngineering.UsbSabertoothTimeout,DimensionEngineering.UsbSabertoothTimeout)">
+            <summary>
+            Compares the amount of time left in the timeouts.
+            </summary>
+            <param name="lhs">The left side of the less-than comparison.</param>
+            <param name="rhs">The right side of the less-than comparison.</param>
+            <returns>True if <paramref name="lhs"/> has less time left than <paramref name="rhs"/>.</returns>
+        </member>
+        <member name="M:DimensionEngineering.UsbSabertoothTimeout.op_GreaterThan(DimensionEngineering.UsbSabertoothTimeout,DimensionEngineering.UsbSabertoothTimeout)">
+            <summary>
+            Compares the amount of time left in the timeouts.
+            </summary>
+            <param name="lhs">The left side of the greater-than comparison.</param>
+            <param name="rhs">The right side of the greater-than comparison.</param>
+            <returns>True if <paramref name="lhs"/> has more time left than <paramref name="rhs"/>.</returns>
+        </member>
+    </members>
+</doc>

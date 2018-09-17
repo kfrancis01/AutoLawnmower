@@ -1,0 +1,11 @@
+﻿  Source.cpp
+c:\users\lsharpe3\source\repos\project1\project1\source.cpp(25): warning C4099: 'DimensionEngineering::UsbSabertoothSerial': type name first seen using 'class' now seen using 'struct'
+c:\users\lsharpe3\source\repos\project1\project1\source.cpp(26): warning C4099: 'DimensionEngineering::UsbSabertooth': type name first seen using 'class' now seen using 'struct'
+c:\users\lsharpe3\source\repos\project1\project1\source.cpp(43): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+c:\users\lsharpe3\source\repos\project1\project1\source.cpp(175): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+c:\users\lsharpe3\source\repos\project1\project1\source.cpp(27): warning C4101: 'Power': unreferenced local variable
+c:\users\lsharpe3\source\repos\project1\project1\source.cpp(27): warning C4101: 'ChangeX': unreferenced local variable
+c:\users\lsharpe3\source\repos\project1\project1\source.cpp(270): warning C4700: uninitialized local variable 'tempMaxY' used
+c:\users\lsharpe3\source\repos\project1\project1\source.cpp(277): warning C4700: uninitialized local variable 'tempMinY' used
+c:\users\lsharpe3\source\repos\project1\project1\source.cpp(44): warning C4700: uninitialized local variable 'StoreX' used
+  Project1.vcxproj -> C:\Users\lsharpe3\source\repos\Project1\Debug\Project1.exe
