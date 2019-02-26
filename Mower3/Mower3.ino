@@ -703,6 +703,8 @@ void Cheerios(LapNumber){
 //     // Some ERROR Protocol
 //   }
   
+  // Equivalent of If statement
+  // Syntax 'ConditionalStatement' ? 'ValueifTrue' : 'ValueifFalse'
   Travel = LapNumber % 2 == 0 ? Travel : -1 * Travel;
 
   // Initiate 90 Deg Turn
