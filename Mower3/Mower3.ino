@@ -623,6 +623,10 @@ void setup()
 // INITIALIZE VARIABLES: These variables will be initialized in this setup loop,
 // then utilized for calculations in the main loop
   int LapNumber = 0;
+  double CPs;
+  
+  int separation = 1000; // Separation Distance between checkpoints
+  double TicksPerDegree = 0.78; // Ratio of Ticks to the degrees turned
 }
 
 void loop() {
@@ -648,27 +652,31 @@ void loop() {
 }  //end void loop()
  
 
-int PathCreate(Currentx, Currenty, Endx, Endy){
+double PathCreate(Currentx, Currenty, Endx, Endy){
 // PathCreate Creates a series of checkpoints along the current path that the mower should follow. 
 // The path will be created 
   
-  int separation = 1000; // Separation Distance between checkpoints
-  double NumberOfCPs = floor(sqrt( (Endx-Currentx)^2 + (Endy-Currenty)^2 ) / separation);   // Number of Checkpoints along the path
-  // Need to Round to nearest whole number / or round down every time
+  // NOTE: Need to Clear CPs array evertime this command is initialized  
+  int NumberOfCPs = ceil(sqrt( (Endx-Currentx)^2 + (Endy-Currenty)^2 ) / separation);   // Number of Checkpoints along the path
+  // Need to Round up every time
   
   for(int ii=0, ii<=NumberOfCPs, ++ii){
 
     // NOTE: May need to update with tolerances later
-    
-    // first point 
+        
     if(ii == 0){ 
-      double CPs[0,ii] = Currentx + (Endx-Currentx)/separation;
-      double CPs[1,ii] = Currenty + (Endy-Currenty)/separation;
-      
+      // first point 
+      CPs[0,ii] = Currentx + (Endx-Currentx)/separation;
+      CPs[1,ii] = Currenty + (Endy-Currenty)/separation;
+    
+    } else if(ii == NumberOfCPs)({
+      // End Point
+      CPs[0,ii] = Endx;
+      CPs[1,ii] = Endy;
     } else{
        // everything after first point
-    double CPs[0,ii] = CPs[1,ii-1) + (Endx-Currentx)/separation;
-    double CPs[1,ii] = CPs[2,ii-1) + (Endy-Currenty)/separation;      
+    CPs[0,ii] = CPs[1,ii-1) + (Endx-Currentx)/separation;
+    CPs[1,ii] = CPs[2,ii-1) + (Endy-Currenty)/separation;      
     }       
   }
   return CPs;
@@ -684,17 +692,18 @@ void Cheerios(LapNumber){
   //int dist = 95; //cm
   //double travel = 
 
-  double TicksPerDegree = 0.78; // Ratio of Ticks to the degrees turned
   int Travel = round(90 * TicksPerDegree); // Ticks to make a 90 deg turn
   
-  // Determine Direction of Turn to Make
-  if(LapNumber % 2 == 0){
-    Travel = Travel;
-  } else if(LapNumber % 2 != 0) {
-    Travel *= -1;
-  } else(){
-    // Some ERROR Protocol
-  }
+//   // Determine Direction of Turn to Make
+//   if(LapNumber % 2 == 0){
+//     Travel = Travel;
+//   } else if(LapNumber % 2 != 0) {
+//     Travel *= -1;
+//   } else(){
+//     // Some ERROR Protocol
+//   }
+  
+  Travel = LapNumber % 2 == 0 ? Travel : -1 * Travel;
 
   // Initiate 90 Deg Turn
   Turn.pi(Travel).wait(); // Initiate Turn
@@ -709,6 +718,7 @@ void Cheerios(LapNumber){
   Turn.pi(Travel).wait(); // Initiate Turn
 
   LapNumber += 1; // Increment Lap Number everytime a full rotation occurs
+  return 0;
 }
 
 
@@ -719,7 +729,7 @@ void Cheerios(LapNumber){
 double RoundTo(Value,precision){
   int foo = Value * (10^precision);
   Value = foo / (10^precision);
-  return(Value);
+  return Value;
 }
 
 void Forward(){
@@ -736,6 +746,7 @@ void AdjustPos(Angle){
   int Travel = round(Angle * TicksPerDegree);
   Turn.pi(Travel).wait(); // Initiate Turn
   Forward(); //start forward protocol after adjustment
+  return 0;
 }
 
 void checkIncrementCP(){
@@ -752,6 +763,7 @@ void checkIncrementCP(){
     Cpx=Cps(0,currentC);
     Cpy=Cps(1,currentC);
   }
+  return 0;
 }
 
 int thetaAdjust(){
