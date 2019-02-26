@@ -721,3 +721,42 @@ double RoundTo(Value,precision){
   Value = foo / (10^precision);
   return(Value);
 }
+
+void Forward(){
+  Drive.s();
+  //need stop mechanism after certain amount of time
+  //ensure that this requires a forward command at regular intervals to continue
+  //prevent mower from getting a mind of its own
+}
+
+void AdjustPos(Angle){
+  //given a theta in degrees
+  //turn by desired amount
+
+  int Travel = round(Angle * TicksPerDegree);
+  Turn.pi(Travel).wait(); // Initiate Turn
+  Forward(); //start forward protocol after adjustment
+}
+
+void checkIncrementCP(){
+  // CP array
+  // lapnumber = row number of CP matrix
+  //Check w/ tolerance to Cpx & Cpy
+  
+  int mag = sqrt((Cpx-currentx)^2+(Cpy-currenty)^2);
+  if (mag <= tolerance){ //if distance between check point and current pos is less than tolerance do stuff
+    //increment to next CP
+    currentC=currentC++;  //signifies the row of the CPs array
+//    Cpxold=Cpx; // previous Checkpoint x
+//    Cpyold=Cpy; // previous Checkpoint y
+    Cpx=Cps(0,currentC);
+    Cpy=Cps(1,currentC);
+  }
+}
+
+int thetaAdjust(){
+  double thetaDes = ; //desired theta based on position and next Checkpoint
+  double thetaActual = ; //actual trajectory theta
+  int thetaAdjust = round( thetaDes - thetaActual ); //theta to adjust by to point toward Checkpoint
+  return thetaAdjust;
+}
