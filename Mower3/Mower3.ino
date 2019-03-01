@@ -65,6 +65,7 @@ bool beaconType;
 bool beaconRead;
 
 
+const double Pi = 3.1415926;
 ////////////////////////////
 //    MMSerial hedgehog support initialization
 //
@@ -625,8 +626,12 @@ void setup()
   int LapNumber = 0;
   double CPs;
   
-  int separation = 1000; // Separation Distance between checkpoints
   double TicksPerDegree = 0.78; // Ratio of Ticks to the degrees turned
+  long separation = 1000; // Separation Distance between checkpoints
+  long Cpx;
+  long Cpy;
+  long xOld;
+  long yOld;
 }
 
 void loop() {
@@ -636,6 +641,8 @@ void loop() {
   //if ( OPMODE & DEBUG ) { Serial.println( "L+"); Serial.flush();}
   microsNow = micros();
   if ((microsNow - microsPrevious) >= microsPerReading) {
+    xOld = dataPacket.x;
+    yOld = dataPacket.y;
     loop_hedgehog();// MMSerial hedgehog service loop
 
     if ( OPMODE & DEBUG) {
@@ -669,21 +676,24 @@ double PathCreate(Currentx, Currenty, Endx, Endy){
       CPs[0,ii] = Currentx + (Endx-Currentx)/separation;
       CPs[1,ii] = Currenty + (Endy-Currenty)/separation;
     
-    } else if(ii == NumberOfCPs)({
+    } else if(ii == NumberOfCPs){
       // End Point
       CPs[0,ii] = Endx;
       CPs[1,ii] = Endy;
     } else{
        // everything after first point
-    CPs[0,ii] = CPs[1,ii-1) + (Endx-Currentx)/separation;
-    CPs[1,ii] = CPs[2,ii-1) + (Endy-Currenty)/separation;      
+    CPs[0,ii] = CPs[1,ii-1] + (Endx-Currentx)/separation;
+    CPs[1,ii] = CPs[2,ii-1] + (Endy-Currenty)/separation;      
     }       
   }
+  int Cpx=CPs(0,0);
+  int Cpy=CPs(1,0);
+  currentC=0;
   return CPs;
 }
 
 
-void Cheerios(LapNumber){
+void turnOneEighty(LapNumber){
   // Turning function for mower at end of each lap
 
   // This section may not be needed later
@@ -735,7 +745,7 @@ double RoundTo(Value,precision){
 }
 
 void Forward(){
-  Drive.s();
+  Drive.si(20);
   //need stop mechanism after certain amount of time
   //ensure that this requires a forward command at regular intervals to continue
   //prevent mower from getting a mind of its own
@@ -769,8 +779,10 @@ void checkIncrementCP(){
 }
 
 int thetaAdjust(){
-  double thetaDes = ; //desired theta based on position and next Checkpoint
-  double thetaActual = ; //actual trajectory theta
+  double rActual = sqrt( (dataPacket.x - xOld)^2 + (dataPacket.y - yOld)^2)
+  double rDes = sqrt( (Cpx - dataPacket.x)^2 + (Cpy - dataPacket.y)^2)
+  double thetaDes = asin( (Cpy - dataPacket.y)/rDes) * 180/Pi; //desired theta based on position and next Checkpoint
+  double thetaActual = 180 - asin( (dataPacket.y - yOld)/rActual )*180/Pi; //actual trajectory theta
   int thetaAdjust = round( thetaDes - thetaActual ); //theta to adjust by to point toward Checkpoint
   return thetaAdjust;
 }
