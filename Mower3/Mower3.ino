@@ -627,11 +627,12 @@ void setup()
   double CPs;
   
   double TicksPerDegree = 0.78; // Ratio of Ticks to the degrees turned
-  long separation = 1000; // Separation Distance between checkpoints
+  long separation = 2000; // Separation Distance between checkpoints
   long Cpx;
   long Cpy;
   long xOld;
   long yOld;
+  long tolerance = 50; // 5cm Navigation Tolerance
 }
 
 void loop() {
@@ -659,7 +660,7 @@ void loop() {
 }  //end void loop()
  
 
-double PathCreate(Currentx, Currenty, Endx, Endy){
+double RowCreate(Currentx, Currenty, Endx, Endy){
 // PathCreate Creates a series of checkpoints along the current path that the mower should follow. 
 // The path will be created 
   
@@ -733,7 +734,6 @@ void turnOneEighty(LapNumber){
   return 0;
 }
 
-
 // RoundTo is a Function for Rounding Values to specified Precision. 2 Fields:
 // 1) Value = Value to be rounded
 // 2) Precision = decimal places to be rounded
@@ -745,7 +745,7 @@ double RoundTo(Value,precision){
 }
 
 void Forward(){
-  Drive.si(20);
+  Drive.pi(20).s(5); //specific distance to travel at a given speed
   //need stop mechanism after certain amount of time
   //ensure that this requires a forward command at regular intervals to continue
   //prevent mower from getting a mind of its own
@@ -766,23 +766,23 @@ void checkIncrementCP(){
   // lapnumber = row number of CP matrix
   //Check w/ tolerance to Cpx & Cpy
   
-  int mag = sqrt((Cpx-currentx)^2+(Cpy-currenty)^2);
+  int mag = sqrt((Cpx-dataPacket.x)^2+(Cpy-dataPacket.y)^2); // Distance to CP
   if (mag <= tolerance){ //if distance between check point and current pos is less than tolerance do stuff
     //increment to next CP
     currentC=currentC++;  //signifies the row of the CPs array
 //    Cpxold=Cpx; // previous Checkpoint x
 //    Cpyold=Cpy; // previous Checkpoint y
-    Cpx=Cps(0,currentC);
-    Cpy=Cps(1,currentC);
+    Cpx=Cps(0,currentC); // Change to next CP x value
+    Cpy=Cps(1,currentC); // change to next CP y value
   }
   return 0;
 }
 
 int thetaAdjust(){
-  double rActual = sqrt( (dataPacket.x - xOld)^2 + (dataPacket.y - yOld)^2)
-  double rDes = sqrt( (Cpx - dataPacket.x)^2 + (Cpy - dataPacket.y)^2)
-  double thetaDes = asin( (Cpy - dataPacket.y)/rDes) * 180/Pi; //desired theta based on position and next Checkpoint
-  double thetaActual = 180 - asin( (dataPacket.y - yOld)/rActual )*180/Pi; //actual trajectory theta
+  double rActual = sqrt( (dataPacket.x - xOld)^2 + (dataPacket.y - yOld)^2); // distance traveled from last measurement
+  double rDes = sqrt( (Cpx - dataPacket.x)^2 + (Cpy - dataPacket.y)^2); // distance to CP
+  double thetaDes = asin( (Cpy - dataPacket.y)/rDes) * 180/Pi; //desired theta based on position and next Checkpoint in degrees
+  double thetaActual = 180 - asin( (dataPacket.y - yOld)/rActual )*180/Pi; //actual trajectory theta in degrees
   int thetaAdjust = round( thetaDes - thetaActual ); //theta to adjust by to point toward Checkpoint
-  return thetaAdjust;
+  return thetaAdjust; // Angle to adjust by in degrees
 }
