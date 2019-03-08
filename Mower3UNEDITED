@@ -222,7 +222,37 @@ bool transferBeaconPacket( unsigned char* buf) {
 
   //these next few lines would be replaced by reading the static beacon packet!!!
   beaconPacket.numBeacons= 4; //mower project using only 4 beacons
-
+  
+  for(int i=0, i<beaconPacket.numBeacons, i++){
+  
+  int beacon = 6 + i*14 ;
+  
+  if(buf[beacon]==1){
+  beaconPacket.beacon1= buf[6];
+  } else if(buf[beacon]==2){
+  beaconPacket.beacon2= buf[6];
+  } else if(buf[beacon]==3){
+  beaconPacket.beacon3= buf[6];
+  } else if(buf[beacon]==4){
+  beaconPacket.beacon4= buf[6];
+  }
+  
+  un32.b[0] = buf[7];
+  un32.b[1] = buf[8];
+  un32.b[2] = buf[9];
+  un32.b[3] = buf[10];
+  beaconPacket.xb1= un32.vi32;
+  un32.b[0] = buf[11];
+  un32.b[1] = buf[12];
+  un32.b[2] = buf[13];
+  un32.b[3] = buf[14];
+  beaconPacket.yb1= un32.vi32;
+  un32.b[0] = buf[15];
+  un32.b[1] = buf[16];
+  un32.b[2] = buf[17];
+  un32.b[3] = buf[18];
+  }
+  
   //just skip the header fields
   beaconPacket.beacon1= buf[6];
   un32.b[0] = buf[7];
