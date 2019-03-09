@@ -64,6 +64,16 @@ bool hiResType;
 bool beaconType;
 bool beaconRead;
 
+// Path Creation Variables
+int LapNumber = 0;
+double CPs; 
+double TicksPerDegree = 0.78; // Ratio of Ticks to the degrees turned
+long separation = 2000; // Separation Distance between checkpoints
+long Cpx;
+long Cpy;
+long xOld;
+long yOld;
+long tolerance = 50; // 5cm Navigation Tolerance
 
 const double Pi = 3.1415926;
 ////////////////////////////
@@ -731,21 +741,21 @@ void turnOneEighty(LapNumber){
   Turn.pi(Travel).wait(); // Initiate Turn
 
   LapNumber += 1; // Increment Lap Number everytime a full rotation occurs
-  return 0;
+  return;
 }
 
 // RoundTo is a Function for Rounding Values to specified Precision. 2 Fields:
 // 1) Value = Value to be rounded
 // 2) Precision = decimal places to be rounded
 // Value must be declared as the double type
-double RoundTo(Value,precision){
-  int foo = Value * (10^precision);
-  Value = foo / (10^precision);
-  return Value;
-}
+// double RoundTo(Value,precision){
+//   int foo = Value * (10^precision);
+//   Value = foo / (10^precision);
+//   return Value;
+// }
 
 void Forward(){
-  Drive.pi(20).s(5); //specific distance to travel at a given speed
+  Drive.pi(20).s(3); //specific distance to travel at a given speed
   //need stop mechanism after certain amount of time
   //ensure that this requires a forward command at regular intervals to continue
   //prevent mower from getting a mind of its own
