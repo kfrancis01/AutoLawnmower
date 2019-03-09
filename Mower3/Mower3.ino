@@ -74,6 +74,7 @@ long Cpy;
 long xOld;
 long yOld;
 long tolerance = 50; // 5cm Navigation Tolerance
+bool firstLoop = TRUE; // boolean for first time through loop
 
 const double Pi = 3.1415926;
 ////////////////////////////
@@ -633,16 +634,16 @@ void setup()
 
 // INITIALIZE VARIABLES: These variables will be initialized in this setup loop,
 // then utilized for calculations in the main loop
-  int LapNumber = 0;
-  double CPs;
+//   int LapNumber = 0;
+//   double CPs;
   
-  double TicksPerDegree = 0.78; // Ratio of Ticks to the degrees turned
-  long separation = 2000; // Separation Distance between checkpoints
-  long Cpx;
-  long Cpy;
-  long xOld;
-  long yOld;
-  long tolerance = 50; // 5cm Navigation Tolerance
+//   double TicksPerDegree = 0.78; // Ratio of Ticks to the degrees turned
+//   long separation = 2000; // Separation Distance between checkpoints
+//   long Cpx;
+//   long Cpy;
+//   long xOld;
+//   long yOld;
+//   long tolerance = 50; // 5cm Navigation Tolerance
 }
 
 void loop() {
@@ -652,9 +653,17 @@ void loop() {
   //if ( OPMODE & DEBUG ) { Serial.println( "L+"); Serial.flush();}
   microsNow = micros();
   if ((microsNow - microsPrevious) >= microsPerReading) {
-    xOld = dataPacket.x;
-    yOld = dataPacket.y;
-    loop_hedgehog();// MMSerial hedgehog service loop
+    if (firstLoop){
+      loop_hedgehog();
+      xOld = dataPacket.x;
+      yOld = dataPacket.y;
+      firstLoop = FALSE;
+    }
+    else{
+      xOld = dataPacket.x;
+      yOld = dataPacket.y;
+      loop_hedgehog();// MMSerial hedgehog service loop
+    }
 
     if ( OPMODE & DEBUG) {
 /*
@@ -759,6 +768,7 @@ void Forward(){
   //need stop mechanism after certain amount of time
   //ensure that this requires a forward command at regular intervals to continue
   //prevent mower from getting a mind of its own
+  return;
 }
 
 void AdjustPos(Angle){
@@ -768,7 +778,7 @@ void AdjustPos(Angle){
   int Travel = round(Angle * TicksPerDegree);
   Turn.pi(Travel).wait(); // Initiate Turn
   Forward(); //start forward protocol after adjustment
-  return 0;
+  return;
 }
 
 void checkIncrementCP(){
@@ -785,14 +795,14 @@ void checkIncrementCP(){
     Cpx=Cps(0,currentC); // Change to next CP x value
     Cpy=Cps(1,currentC); // change to next CP y value
   }
-  return 0;
+  return;
 }
 
 int thetaAdjust(){
   double rActual = sqrt( (dataPacket.x - xOld)^2 + (dataPacket.y - yOld)^2); // distance traveled from last measurement
   double rDes = sqrt( (Cpx - dataPacket.x)^2 + (Cpy - dataPacket.y)^2); // distance to CP
-  double thetaDes = asin( (Cpy - dataPacket.y)/rDes) * 180/Pi; //desired theta based on position and next Checkpoint in degrees
-  double thetaActual = 180 - asin( (dataPacket.y - yOld)/rActual )*180/Pi; //actual trajectory theta in degrees
-  int thetaAdjust = round( thetaDes - thetaActual ); //theta to adjust by to point toward Checkpoint
-  return thetaAdjust; // Angle to adjust by in degrees
+  double tDes = asin( (Cpy - dataPacket.y)/rDes) * 180/Pi; //desired theta based on position and next Checkpoint in degrees
+  double tActual = 180 - asin( (dataPacket.y - yOld)/rActual )*180/Pi; //actual trajectory theta in degrees
+  int ta = round( tDes - tActual ); //theta to adjust by to point toward Checkpoint
+  return ta; // Angle to adjust by in degrees
 }
