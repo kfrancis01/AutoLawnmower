@@ -65,16 +65,19 @@ bool beaconType;
 bool beaconRead;
 
 // Path Creation Variables
-int LapNumber = 0;
-double CPs; 
+int LapNumber = 0; // incremental variable
+struct CheckPoint {long x; long y;} // Checkpoint Structure
+CheckPoint CP[50];
 double TicksPerDegree = 0.78; // Ratio of Ticks to the degrees turned
 long separation = 2000; // Separation Distance between checkpoints
-long Cpx;
-long Cpy;
-long xOld;
-long yOld;
+long Cpx; // checkpoint X
+long Cpy; // Checkpoint Y
+long xOld; // last x position
+long yOld; // last y position
 long tolerance = 50; // 5cm Navigation Tolerance
 bool firstLoop = TRUE; // boolean for first time through loop
+long xb1;xb2;xb3;xb4;yb1;yb2;yb3;yb4 //beacon positions
+int ta; // turn angle global variable
 
 const double Pi = 3.1415926;
 ////////////////////////////
@@ -119,6 +122,29 @@ void setup_hedgehog() {
     //delay(1);  //just wait a bit and look again
   }
 
+  // Since beacon# is based on order in which they come in
+  // redefines x# and y# based on actual beacon address
+  if (beaconPacket.beacon1==1){xb1=beaconPacket.xb1; yb1=beaconPacket.yb1;}
+  if (beaconPacket.beacon1==2){xb2=beaconPacket.xb1; yb2=beaconPacket.yb1;}
+  if (beaconPacket.beacon1==3){xb3=beaconPacket.xb1; yb3=beaconPacket.yb1:}
+  if (beaconPacket.beacon1==4){xb4=beaconPacket.xb1; yb4=beaconPacket.yb1;}
+
+  if (beaconPacket.beacon2==1){xb1=beaconPacket.xb2; yb1=beaconPacket.yb2;}
+  if (beaconPacket.beacon2==2){xb2=beaconPacket.xb2; yb2=beaconPacket.yb2;}
+  if (beaconPacket.beacon2==3){xb3=beaconPacket.xb2; yb3=beaconPacket.yb2:}
+  if (beaconPacket.beacon2==4){xb4=beaconPacket.xb2; yb4=beaconPacket.yb2;}
+
+  if (beaconPacket.beacon3==1){xb1=beaconPacket.xb3; yb1=beaconPacket.yb3;}
+  if (beaconPacket.beacon3==2){xb2=beaconPacket.xb3; yb2=beaconPacket.yb3;}
+  if (beaconPacket.beacon3==3){xb3=beaconPacket.xb3; yb3=beaconPacket.yb3:}
+  if (beaconPacket.beacon3==4){xb4=beaconPacket.xb3; yb4=beaconPacket.yb3;}
+
+  if (beaconPacket.beacon4==1){xb1=beaconPacket.xb4; yb1=beaconPacket.yb4;}
+  if (beaconPacket.beacon4==2){xb2=beaconPacket.xb4; yb2=beaconPacket.yb4;}
+  if (beaconPacket.beacon4==3){xb3=beaconPacket.xb4; yb3=beaconPacket.yb4:}
+  if (beaconPacket.beacon4==4){xb4=beaconPacket.xb4; yb4=beaconPacket.yb4;}
+  //end of redefined beacon positions
+  
   //check the Beacon CRC
   unsigned int tmp= hedgehog_set_crc16( &(beaconPacket.destAddr), beaconPacketSize);
 
@@ -134,6 +160,13 @@ void setup_hedgehog() {
   hiResType= false;
   beaconType= false;
 
+  ////////////////////////////////////////////////////////////////////////
+  // OFFSET CALCULATION FUNCTION CALL
+  // END OF ROW POINTS CALCULATION
+  // ADD ANY ADDITIONAL SET UP PROTOCOLS HERE
+  // AND ADD MOVEMENT AND ADDITIONAL PATH CREATION STEPS IN LOOP_HEDGEHOG
+  /////////////////////////////////////////////////////////////////////////
+  
   //now the beaconPacket is ready to pass into mower ambulate methods after each HiResPacket!!!
   //ready to use continuous Arduino looping.
 }  // end setup_hedgehog
@@ -634,16 +667,7 @@ void setup()
 
 // INITIALIZE VARIABLES: These variables will be initialized in this setup loop,
 // then utilized for calculations in the main loop
-//   int LapNumber = 0;
-//   double CPs;
-  
-//   double TicksPerDegree = 0.78; // Ratio of Ticks to the degrees turned
-//   long separation = 2000; // Separation Distance between checkpoints
-//   long Cpx;
-//   long Cpy;
-//   long xOld;
-//   long yOld;
-//   long tolerance = 50; // 5cm Navigation Tolerance
+
 }
 
 void loop() {
@@ -679,41 +703,42 @@ void loop() {
 }  //end void loop()
  
 
-double RowCreate(Currentx, Currenty, Endx, Endy){
+int RowCreate(Currentx, Currenty, Endx, Endy){ // get rid of currentx and y and put in dataPacket.x and dataPacket.y
 // PathCreate Creates a series of checkpoints along the current path that the mower should follow. 
 // The path will be created 
   
   // NOTE: Need to Clear CPs array evertime this command is initialized  
-  int NumberOfCPs = ceil(sqrt( (Endx-Currentx)^2 + (Endy-Currenty)^2 ) / separation);   // Number of Checkpoints along the path
+  long RowMag = (sqrt( (Endx-Currentx)^2 + (Endy-Currenty)^2 ));
+  long theta = round(acos((Endx-Currentx)/RowMag)); //Radians
+  int NumberOfCPs = ceil(RowMag / separation);   // Number of Checkpoints along the path
   // Need to Round up every time
-  
-  for(int ii=0, ii<=NumberOfCPs, ++ii){
+ 
+  for(int ii=0, ii<=NumberOfCPs, ii++){
 
     // NOTE: May need to update with tolerances later
         
     if(ii == 0){ 
       // first point 
-      CPs[0,ii] = Currentx + (Endx-Currentx)/separation;
-      CPs[1,ii] = Currenty + (Endy-Currenty)/separation;
-    
-    } else if(ii == NumberOfCPs){
+      CP[ii].x = Currentx + separation*cos(theta);
+      CP[ii].y = Currenty + separation*sin(theta);    
+    } else if(ii >= NumberOfCPs){
       // End Point
-      CPs[0,ii] = Endx;
-      CPs[1,ii] = Endy;
+      CP[ii].x = Endx;
+      CP[ii].y = Endy;
     } else{
        // everything after first point
-    CPs[0,ii] = CPs[1,ii-1] + (Endx-Currentx)/separation;
-    CPs[1,ii] = CPs[2,ii-1] + (Endy-Currenty)/separation;      
+      CP[ii].x = CP[ii-1].x + separation*cos(theta);
+      CP[ii].y = CP[ii-1].y + separation*sin(theta);      
     }       
   }
-  int Cpx=CPs(0,0);
-  int Cpy=CPs(1,0);
+  Cpx=CP[0].x;
+  Cpy=CP[0].y;
   currentC=0;
-  return CPs;
+  return NumberOfCPs;
 }
 
 
-void turnOneEighty(LapNumber){
+void turnOneEighty(){
   // Turning function for mower at end of each lap
 
   // This section may not be needed later
@@ -771,11 +796,11 @@ void Forward(){
   return;
 }
 
-void AdjustPos(Angle){
+void AdjustPos(int Angle){
   //given a theta in degrees
   //turn by desired amount
 
-  int Travel = round(Angle * TicksPerDegree);
+  int Travel = round(int Angle * TicksPerDegree);
   Turn.pi(Travel).wait(); // Initiate Turn
   Forward(); //start forward protocol after adjustment
   return;
@@ -786,7 +811,7 @@ void checkIncrementCP(){
   // lapnumber = row number of CP matrix
   //Check w/ tolerance to Cpx & Cpy
   
-  int mag = sqrt((Cpx-dataPacket.x)^2+(Cpy-dataPacket.y)^2); // Distance to CP
+  long mag = sqrt((Cpx-dataPacket.x)^2+(Cpy-dataPacket.y)^2); // Distance to CP
   if (mag <= tolerance){ //if distance between check point and current pos is less than tolerance do stuff
     //increment to next CP
     currentC=currentC++;  //signifies the row of the CPs array
