@@ -830,3 +830,49 @@ int thetaAdjust(){
   int ta = round( tDes - tActual ); //theta to adjust by to point toward Checkpoint
   return ta; // Angle to adjust by in degrees
 }
+
+void OffsetCreate(){ // Create offset positions between beacons for path creation
+  // xb1, yb1, xb2, yb2, xb3, yb3, xb4, yb4 Beacon positions
+  // r=offset/sqrt(2)
+  // x1 x2 x3 x4 y1 y2 y3 y4  Offset beacon positions
+  long r = offset/sqrt(2);
+  long magOneTwo = sqrt((xb2-xb1)^2+(yb2-yb1)^2); 
+  long magThreeFour = sqrt((xb4-xb3)^2+(yb4-yb3)^2);
+
+  // Beacon unit vectors
+  float TxOneTwo = (xb2-xb1)/magOneTwo; 
+  float TyOneTwo = (yb2-yb1)/magOneTwo;
+  float TxThreeFour = (xb4-xb3)/magThreeFour; 
+  float TyThreeFour = (yb4-yb3)/magThreeFour;
+
+  // Psuedo offset position along 1-2 and 3-4
+  long x1prime = xb1 + r*TxOneTwo;
+  long y1prime = yb1 + r*TyOneTwo;
+  long x2prime = xb2 - r*TxOneTwo;
+  long y2prime = yb2 - r*TyOneTwo; 
+  long x3prime = xb3 + r*TxThreeFour;
+  long y3prime = yb3 + r*TyThreeFour;
+  long x4prime = xb4 - r*TxThreeFour;
+  long y4prime = yb4 - r*TyThreeFour;
+
+  long magOneFour = sqrt((x4prime - x1prime)^2 + (y4prime - y1prime)^2);
+  long magTwoThree = sqrt((x3prime - x2prime)^2 + (y3prime - y2prime)^2);
+
+  // Psuedo Offset Unit Vectors
+  float TxOneFour = (x4prime - x1prime)/magOneFour;
+  float TyOneFour = (y4prime - y1prime)/magOneFour;
+  float TxTwoThree = (x3prime - x2prime)/magTwoThree;
+  float TyTwoThree = (y3prime - y2prime)/magTwoThree;
+
+  // Final offset positions along 1prime - 4prime and 2prime - 3prime
+  x1 = x1prime + r*TxOneFour;
+  y1 = y1prime + r*TyOneFour;
+  x4 = x4prime - r*TxOneFour;
+  y4 = y4prime - r*TyOneFour;
+  x2 = x2prime + r*TxTwoThree;
+  y2 = y2prime + r*TyTwoThree;
+  x3 = x3prime - r*TxTwoThree;
+  y3 = y3prime - r*TyTwoThree;
+
+  return;
+}
