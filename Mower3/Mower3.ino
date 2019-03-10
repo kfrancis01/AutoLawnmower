@@ -68,21 +68,21 @@ bool beaconRead;
 // Path Creation Variables
 int currentC; // index for current checkpoint in array
 int LapNumber = 0; // incremental variable
-struct CheckPoint {long x; long y;} // Checkpoint Structure
+struct CheckPoint {long x; long y;}; // Checkpoint Structure
 CheckPoint CP[50] = {}; // TODO fix this initialization
 long separation = 2000; // Separation Distance between checkpoints
 long Cpx; // checkpoint X
 long Cpy; // Checkpoint Y
 long tolerance = 50; // 5cm Navigation Tolerance
-bool firstLoop = TRUE; // boolean for first time through loop
-long xb1;xb2;xb3;xb4;yb1;yb2;yb3;yb4; //beacon positions
+bool firstLoop = 1; // boolean for first time through loop
+long xb1, xb2, xb3,xb4,yb1,yb2,yb3,yb4; //beacon positions
 int ta; // turn angle global variable
 long offset = 1000; //total offset
-long x1;x2;x3;x4;y1;y2;y3;y4; // offset beacon positions
-struct EndPoint {long x; long y;} // End of Row Structure
+long x1,x2,x3,x4,y1,y2,y3,y4; // offset beacon positions
+struct EndPoint {long x; long y;}; // End of Row Structure
 EndPoint End[20] = {}; // TODO fix this initialization
 long rowOffset = 250; // separation between rows (50cm for now)
-long Endx; Endy; //End of row position
+long Endx, Endy; //End of row position
 const double Pi = 3.1415926;
 
 // Movement Variables
@@ -140,22 +140,22 @@ void setup_hedgehog() {
   // redefines x# and y# based on actual beacon address
   if (beaconPacket.beacon1==1){xb1=beaconPacket.xb1; yb1=beaconPacket.yb1;}
   else if (beaconPacket.beacon1==2){xb2=beaconPacket.xb1; yb2=beaconPacket.yb1;}
-  else if (beaconPacket.beacon1==3){xb3=beaconPacket.xb1; yb3=beaconPacket.yb1:}
+  else if (beaconPacket.beacon1==3){xb3=beaconPacket.xb1; yb3=beaconPacket.yb1;}
   else if (beaconPacket.beacon1==4){xb4=beaconPacket.xb1; yb4=beaconPacket.yb1;}
 
   if (beaconPacket.beacon2==1){xb1=beaconPacket.xb2; yb1=beaconPacket.yb2;}
   else if (beaconPacket.beacon2==2){xb2=beaconPacket.xb2; yb2=beaconPacket.yb2;}
-  else if (beaconPacket.beacon2==3){xb3=beaconPacket.xb2; yb3=beaconPacket.yb2:}
+  else if (beaconPacket.beacon2==3){xb3=beaconPacket.xb2; yb3=beaconPacket.yb2;}
   else if (beaconPacket.beacon2==4){xb4=beaconPacket.xb2; yb4=beaconPacket.yb2;}
 
   if (beaconPacket.beacon3==1){xb1=beaconPacket.xb3; yb1=beaconPacket.yb3;}
   else if (beaconPacket.beacon3==2){xb2=beaconPacket.xb3; yb2=beaconPacket.yb3;}
-  else if (beaconPacket.beacon3==3){xb3=beaconPacket.xb3; yb3=beaconPacket.yb3:}
+  else if (beaconPacket.beacon3==3){xb3=beaconPacket.xb3; yb3=beaconPacket.yb3;}
   else if (beaconPacket.beacon3==4){xb4=beaconPacket.xb3; yb4=beaconPacket.yb3;}
 
   if (beaconPacket.beacon4==1){xb1=beaconPacket.xb4; yb1=beaconPacket.yb4;}
   else if (beaconPacket.beacon4==2){xb2=beaconPacket.xb4; yb2=beaconPacket.yb4;}
-  else if (beaconPacket.beacon4==3){xb3=beaconPacket.xb4; yb3=beaconPacket.yb4:}
+  else if (beaconPacket.beacon4==3){xb3=beaconPacket.xb4; yb3=beaconPacket.yb4;}
   else if (beaconPacket.beacon4==4){xb4=beaconPacket.xb4; yb4=beaconPacket.yb4;}
   //end of redefined beacon positions
   
@@ -701,7 +701,7 @@ void loop() {
       loop_hedgehog();
       xOld = dataPacket.x;  // set old x and y position as hedge position after update for first hedge loop
       yOld = dataPacket.y;
-      firstLoop = FALSE;
+      firstLoop = 0;
     }
     else{
       xOld = dataPacket.x; // set old x and y position as hedge position before update
@@ -738,7 +738,7 @@ void RowCreate(){ // TODO use unit vectors instead of trig
   int NumberOfCPs = ceil(RowMag / separation);   // Number of Checkpoints along the path
   // Need to Round up every time
  
-  for(int ii=0, ii<=NumberOfCPs, ii++){
+  for(int ii=0; ii<=NumberOfCPs; ii++){
 
     // NOTE: May need to update with tolerances later
         
