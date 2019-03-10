@@ -64,7 +64,9 @@ bool hiResType;
 bool beaconType;
 bool beaconRead;
 
+// TODO check that all variables are accounted for
 // Path Creation Variables
+int currentC; // index for current checkpoint in array
 int LapNumber = 0; // incremental variable
 struct CheckPoint {long x; long y;} // Checkpoint Structure
 CheckPoint CP[50] = {}; // TODO fix this initialization
@@ -91,7 +93,8 @@ long yOld; // last y position
 
 ////////////////////////////
 //    MMSerial hedgehog support initialization
-//
+///////////////////////////
+
 void setup_hedgehog() {
 
   Serial1.begin(MMBAUDRATE); // set speed for hedgehog
@@ -126,6 +129,8 @@ void setup_hedgehog() {
   ////////////////////////////////////////////
   // get beacon data
   //use find_beacon() to find/retrieve BeaconPacket
+  ///////////////////////////////////////////
+  
   while ( !beaconRead) {  //loop until you find one
     find_beacon();
     //delay(1);  //just wait a bit and look again
@@ -170,6 +175,7 @@ void setup_hedgehog() {
   beaconType= false;
 
   ////////////////////////////////////////////////////////////////////////
+  // TODO add setup functions that create path here
   // OFFSET CALCULATION FUNCTION CALL
   // END OF ROW POINTS CALCULATION
   // ADD ANY ADDITIONAL SET UP PROTOCOLS HERE
@@ -650,8 +656,13 @@ dataPacket.CRC_16= sum;
 return sum.w;
 }// hedgehog_set_crc16
 
-//  END OF MARVELMIND HEDGEHOG RELATED PART
-//////////////////////////////////////////////////////////////
+//////////////////////////////////////////////
+//  END OF MARVELMIND HEDGEHOG RELATED PART //
+//////////////////////////////////////////////
+
+////////////////////////////
+// DO NOT EDIT MAIN SETUP //
+////////////////////////////
 
 void setup()
 {
@@ -673,11 +684,11 @@ void setup()
   packet_received= 0;
 
   if ( OPMODE & DEBUG) { Serial.println( "Setup done."); }//Serial.flush();}
+} // end main setup
 
-// INITIALIZE VARIABLES: These variables will be initialized in this setup loop,
-// then utilized for calculations in the main loop
-
-}
+///////////////////////////
+// DO NOT EDIT MAIN LOOP //
+///////////////////////////
 
 void loop() {
   // Use of delay(XXX); is not recommended as good Arduiono programming practice,
@@ -688,12 +699,12 @@ void loop() {
   if ((microsNow - microsPrevious) >= microsPerReading) {
     if (firstLoop){
       loop_hedgehog();
-      xOld = dataPacket.x;
+      xOld = dataPacket.x;  // set old x and y position as hedge position after update for first hedge loop
       yOld = dataPacket.y;
       firstLoop = FALSE;
     }
     else{
-      xOld = dataPacket.x;
+      xOld = dataPacket.x; // set old x and y position as hedge position before update
       yOld = dataPacket.y;
       loop_hedgehog();// MMSerial hedgehog service loop
     }
@@ -711,11 +722,16 @@ void loop() {
   //if ( OPMODE & DEBUG) { Serial.println( "L-"); Serial.flush();}
 }  //end void loop()
  
+ 
+//////////////////////////////////////////
+// MOVEMENT AND PATH CREATION FUNCTIONS //
+//////////////////////////////////////////
 
+// TODO Test this function
+// TODO call this in relevant loop_hedgehog position
 void RowCreate(){ // TODO use unit vectors instead of trig
 // PathCreate Creates a series of checkpoints along the current path that the mower should follow. 
 // The path will be created 
-  
   // NOTE: Need to Clear CPs array evertime this command is initialized  
   long RowMag = (sqrt( (Endx-dataPacket.x)^2 + (Endy-dataPacket.y)^2 ));
   long theta = round(acos((Endx-dataPacket.x)/RowMag)); //Radians
@@ -746,7 +762,8 @@ void RowCreate(){ // TODO use unit vectors instead of trig
   return;
 }
 
-
+// TODO Test this function
+// TODO call this in relevant loop_hedgehog position
 void turnOneEighty(){
   // Turning function for mower at end of each lap
 
@@ -800,6 +817,8 @@ void turnOneEighty(){
 //   return Value;
 // }
 
+// TODO Test this function
+// TODO call this in relevant loop_hedgehog position
 void Forward(){
   Drive.pi(20).s(encoderSpeed); //specific distance to travel at a given speed
   //ensure that this requires a forward command at regular intervals to continue
@@ -807,16 +826,20 @@ void Forward(){
   return;
 }
 
-void AdjustPos(int Angle){
+// TODO Test this function
+// TODO call this in relevant loop_hedgehog position
+void AdjustPos(){
   //given a theta in degrees
   //turn by desired amount
 
-  int Travel = round(int Angle * TicksPerDegree);
+  int Travel = round(ta * TicksPerDegree);
   Turn.pi(Travel).s(encoderSpeed).wait(); // Initiate Turn
   Forward(); //start forward protocol after adjustment
   return;
 }
 
+// TODO Test this function
+// TODO call this in relevant loop_hedgehog position
 void checkIncrementCP(){
   // CP array
   // lapnumber = row number of CP matrix
@@ -825,26 +848,27 @@ void checkIncrementCP(){
   long mag = sqrt((Cpx-dataPacket.x)^2+(Cpy-dataPacket.y)^2); // Distance to CP
   if (mag <= tolerance){ //if distance between check point and current pos is less than tolerance do stuff
     //increment to next CP
-    currentC++;  //signifies the row of the CPs array
-//    Cpxold=Cpx; // previous Checkpoint x
-//    Cpyold=Cpy; // previous Checkpoint y
+    currentC++;  //increment Checkpoint array index
     Cpx=CP[currentC].x; // Change to next CP x value
     Cpy=CP[currentC].y; // change to next CP y value
   }
   return;
 }
 
-int thetaAdjust(){
+// TODO Test this function
+// TODO call this in relevant loop_hedgehog position
+void thetaAdjust(){
   float rActual = sqrt( (dataPacket.x - xOld)^2 + (dataPacket.y - yOld)^2); // distance traveled from last measurement
   float rDes = sqrt( (Cpx - dataPacket.x)^2 + (Cpy - dataPacket.y)^2); // distance to CP
   float tDes = asin( (Cpy - dataPacket.y)/rDes) * 180/Pi; //desired theta based on position and next Checkpoint in degrees
   float tActual = 180 - asin( (dataPacket.y - yOld)/rActual )*180/Pi; //actual trajectory theta in degrees
-  int ta = round( tDes - tActual ); //theta to adjust by to point toward Checkpoint
-  return ta; // Angle to adjust by in degrees
+  ta = round( tDes - tActual ); //theta to adjust by to point toward Checkpoint
+  return; // Angle to adjust by in degrees
 }
 
-
-void OffsetCreate(){ // Create offset positions between beacons for path creation
+// TODO Test this function
+// TODO call this in setup_hedgehog
+void offsetCreate(){ // Create offset positions between beacons for path creation
   // xb1, yb1, xb2, yb2, xb3, yb3, xb4, yb4 Beacon positions
   // r=offset/sqrt(2)
   // x1 x2 x3 x4 y1 y2 y3 y4  Offset beacon positions
@@ -890,7 +914,9 @@ void OffsetCreate(){ // Create offset positions between beacons for path creatio
   return;
 }
 
-void createEndPoints {
+// TODO Test this function
+// TODO call this in setup_hedgehog
+void createEndPoints() {
   long magOneFour = sqrt((x4-x1)^2+(y4-y1)^2);
   long magTwoThree = sqrt((x3-x2)^2+(y3-y2)^2);
   
@@ -931,6 +957,7 @@ void createEndPoints {
   } // loop end
   Endx=End[0].x;
   Endy=End[0].y;
+  return;
 } // EndPoint function end
 
 
