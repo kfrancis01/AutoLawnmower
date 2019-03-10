@@ -947,10 +947,10 @@ void createEndPoints() {
     } else if (ii < numberOfRows && ii % 2 != 0){ // for all other odd row numbers
       End[ii].x = End[ii-2].x + 2*rowOffset*TxOneFour;
       End[ii].y = End[ii-2].y + 2*rowOffset*TyOneFour;
-    } elseif (ii >= numberOfRows && (numberOfRows) % 2 == 0){ // Last row end point if # of rows is even
+    } else if (ii >= numberOfRows && (numberOfRows) % 2 == 0){ // Last row end point if # of rows is even
       End[ii].x = x3; 
       End[ii].y = y3;
-    } elseif (ii >= numberOfRows && (numberOfRows) % 2 != 0){ // Last row end point if # of rows is odd
+    } else if (ii >= numberOfRows && (numberOfRows) % 2 != 0){ // Last row end point if # of rows is odd
       End[ii].x = x4;
       End[ii].y = y4;
     }// conditional end
