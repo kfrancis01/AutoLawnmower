@@ -67,7 +67,7 @@ bool beaconRead;
 // Path Creation Variables
 int LapNumber = 0; // incremental variable
 struct CheckPoint {long x; long y;} // Checkpoint Structure
-CheckPoint CP[50];
+CheckPoint CP[50] = {}; // TODO fix this initialization
 double TicksPerDegree = 0.78; // Ratio of Ticks to the degrees turned
 long separation = 2000; // Separation Distance between checkpoints
 long Cpx; // checkpoint X
@@ -76,8 +76,13 @@ long xOld; // last x position
 long yOld; // last y position
 long tolerance = 50; // 5cm Navigation Tolerance
 bool firstLoop = TRUE; // boolean for first time through loop
-long xb1;xb2;xb3;xb4;yb1;yb2;yb3;yb4 //beacon positions
+long xb1;xb2;xb3;xb4;yb1;yb2;yb3;yb4; //beacon positions
 int ta; // turn angle global variable
+long offset = 1000; //total offset
+long x1;x2;x3;x4;y1;y2;y3;y4; // offset beacon positions
+struct EndPoint {long x; long y;} // End of Row Structure
+EndPoint End[20] = {}; // TODO fix this initialization
+long rowOffset = 250; // separation between rows (50cm for now)
 
 const double Pi = 3.1415926;
 ////////////////////////////
@@ -125,24 +130,24 @@ void setup_hedgehog() {
   // Since beacon# is based on order in which they come in
   // redefines x# and y# based on actual beacon address
   if (beaconPacket.beacon1==1){xb1=beaconPacket.xb1; yb1=beaconPacket.yb1;}
-  if (beaconPacket.beacon1==2){xb2=beaconPacket.xb1; yb2=beaconPacket.yb1;}
-  if (beaconPacket.beacon1==3){xb3=beaconPacket.xb1; yb3=beaconPacket.yb1:}
-  if (beaconPacket.beacon1==4){xb4=beaconPacket.xb1; yb4=beaconPacket.yb1;}
+  else if (beaconPacket.beacon1==2){xb2=beaconPacket.xb1; yb2=beaconPacket.yb1;}
+  else if (beaconPacket.beacon1==3){xb3=beaconPacket.xb1; yb3=beaconPacket.yb1:}
+  else if (beaconPacket.beacon1==4){xb4=beaconPacket.xb1; yb4=beaconPacket.yb1;}
 
   if (beaconPacket.beacon2==1){xb1=beaconPacket.xb2; yb1=beaconPacket.yb2;}
-  if (beaconPacket.beacon2==2){xb2=beaconPacket.xb2; yb2=beaconPacket.yb2;}
-  if (beaconPacket.beacon2==3){xb3=beaconPacket.xb2; yb3=beaconPacket.yb2:}
-  if (beaconPacket.beacon2==4){xb4=beaconPacket.xb2; yb4=beaconPacket.yb2;}
+  else if (beaconPacket.beacon2==2){xb2=beaconPacket.xb2; yb2=beaconPacket.yb2;}
+  else if (beaconPacket.beacon2==3){xb3=beaconPacket.xb2; yb3=beaconPacket.yb2:}
+  else if (beaconPacket.beacon2==4){xb4=beaconPacket.xb2; yb4=beaconPacket.yb2;}
 
   if (beaconPacket.beacon3==1){xb1=beaconPacket.xb3; yb1=beaconPacket.yb3;}
-  if (beaconPacket.beacon3==2){xb2=beaconPacket.xb3; yb2=beaconPacket.yb3;}
-  if (beaconPacket.beacon3==3){xb3=beaconPacket.xb3; yb3=beaconPacket.yb3:}
-  if (beaconPacket.beacon3==4){xb4=beaconPacket.xb3; yb4=beaconPacket.yb3;}
+  else if (beaconPacket.beacon3==2){xb2=beaconPacket.xb3; yb2=beaconPacket.yb3;}
+  else if (beaconPacket.beacon3==3){xb3=beaconPacket.xb3; yb3=beaconPacket.yb3:}
+  else if (beaconPacket.beacon3==4){xb4=beaconPacket.xb3; yb4=beaconPacket.yb3;}
 
   if (beaconPacket.beacon4==1){xb1=beaconPacket.xb4; yb1=beaconPacket.yb4;}
-  if (beaconPacket.beacon4==2){xb2=beaconPacket.xb4; yb2=beaconPacket.yb4;}
-  if (beaconPacket.beacon4==3){xb3=beaconPacket.xb4; yb3=beaconPacket.yb4:}
-  if (beaconPacket.beacon4==4){xb4=beaconPacket.xb4; yb4=beaconPacket.yb4;}
+  else if (beaconPacket.beacon4==2){xb2=beaconPacket.xb4; yb2=beaconPacket.yb4;}
+  else if (beaconPacket.beacon4==3){xb3=beaconPacket.xb4; yb3=beaconPacket.yb4:}
+  else if (beaconPacket.beacon4==4){xb4=beaconPacket.xb4; yb4=beaconPacket.yb4;}
   //end of redefined beacon positions
   
   //check the Beacon CRC
@@ -703,13 +708,13 @@ void loop() {
 }  //end void loop()
  
 
-int RowCreate(Currentx, Currenty, Endx, Endy){ // TODO get rid of currentx and y and put in dataPacket.x and dataPacket.y
+int RowCreate(Endx, Endy){ // TODO get rid of currentx and y and put in dataPacket.x and dataPacket.y
 // PathCreate Creates a series of checkpoints along the current path that the mower should follow. 
 // The path will be created 
   
   // NOTE: Need to Clear CPs array evertime this command is initialized  
-  long RowMag = (sqrt( (Endx-Currentx)^2 + (Endy-Currenty)^2 ));
-  long theta = round(acos((Endx-Currentx)/RowMag)); //Radians
+  long RowMag = (sqrt( (Endx-dataPacket.x)^2 + (Endy-dataPacket.y)^2 ));
+  long theta = round(acos((Endx-dataPacket.x)/RowMag)); //Radians
   int NumberOfCPs = ceil(RowMag / separation);   // Number of Checkpoints along the path
   // Need to Round up every time
  
@@ -719,8 +724,8 @@ int RowCreate(Currentx, Currenty, Endx, Endy){ // TODO get rid of currentx and y
         
     if(ii == 0){ 
       // first point 
-      CP[ii].x = Currentx + separation*cos(theta);
-      CP[ii].y = Currenty + separation*sin(theta);    
+      CP[ii].x = dataPacket.x + separation*cos(theta);
+      CP[ii].y = dataPacket.y + separation*sin(theta);    
     } else if(ii >= NumberOfCPs){
       // End Point
       CP[ii].x = Endx;
@@ -831,6 +836,7 @@ int thetaAdjust(){
   return ta; // Angle to adjust by in degrees
 }
 
+
 void OffsetCreate(){ // Create offset positions between beacons for path creation
   // xb1, yb1, xb2, yb2, xb3, yb3, xb4, yb4 Beacon positions
   // r=offset/sqrt(2)
@@ -876,3 +882,52 @@ void OffsetCreate(){ // Create offset positions between beacons for path creatio
 
   return;
 }
+
+void createEndPoints {
+  long magOneFour = sqrt((x4-x1)^2+(y4-y1)^2);
+  long magTwoThree = sqrt((x3-x2)^2+(y3-y2)^2);
+  
+  if (magOneFour >= magTwoThree){
+    int numberOfRows = ceil(magOneFour/rowOffset);  
+  } else {
+    int numberOfRows = ceil(magTwoThree/rowOffset);
+  }
+  
+  // unit vectors between 1-4 and 2-3
+  float TxOneFour = (x4 - x1)/magOneFour; 
+  float TyOneFour = (y4 - y1)/magOneFour;
+  float TxTwoThree = (x3 - x2)/magTwoThree;
+  float TyTwoThree = (y3 - y2)/magTwoThree;  
+
+  //odd number of rows end point on 2-3 vector
+  //even number of rows end point on 1-4 vector
+  for (ii=0, ii <= numberOfRows, ii++){
+    if (ii==0) {
+      End[ii].x = x2;
+      End[ii].y = y2;
+    } else if (ii == 1){
+      End[ii].x = x1 + rowOffset*TxOneFour; // 2nd endpointx
+      End[ii].y = y1 + rowOffset*TyOneFour; // 2nd endpointy
+    } else if (ii < numberOfRows && ii % 2 == 0){ // for all other even row numbers
+      End[ii].x = End[ii-2].x + 2*rowOffset*TxTwoThree;
+      End[ii].y = End[ii-2].y + 2*rowOffset*TyTwoThree;
+    } else if (ii < numberOfRows && ii % 2 != 0){ // for all other odd row numbers
+      End[ii].x = End[ii-2].x + 2*rowOffset*TxOneFour;
+      End[ii].y = End[ii-2].y + 2*rowOffset*TyOneFour;
+    } elseif (ii >= numberOfRows && (numberOfRows) % 2 == 0){ // Last row end point if # of rows is even
+      End[ii].x = x3; 
+      End[ii].y = y3;
+    } elseif (ii >= numberOfRows && (numberOfRows) % 2 != 0){ // Last row end point if # of rows is odd
+      End[ii].x = x4;
+      End[ii].y = y4;
+    }// conditional end
+  } // loop end
+} // EndPoint function end
+
+//TODO EndPoint Increment
+void IncrementEP {
+  //similar to checkpoint incrementing
+  //
+}
+
+
