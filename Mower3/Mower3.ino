@@ -68,12 +68,9 @@ bool beaconRead;
 int LapNumber = 0; // incremental variable
 struct CheckPoint {long x; long y;} // Checkpoint Structure
 CheckPoint CP[50] = {}; // TODO fix this initialization
-double TicksPerDegree = 0.78; // Ratio of Ticks to the degrees turned
 long separation = 2000; // Separation Distance between checkpoints
 long Cpx; // checkpoint X
 long Cpy; // Checkpoint Y
-long xOld; // last x position
-long yOld; // last y position
 long tolerance = 50; // 5cm Navigation Tolerance
 bool firstLoop = TRUE; // boolean for first time through loop
 long xb1;xb2;xb3;xb4;yb1;yb2;yb3;yb4; //beacon positions
@@ -83,8 +80,15 @@ long x1;x2;x3;x4;y1;y2;y3;y4; // offset beacon positions
 struct EndPoint {long x; long y;} // End of Row Structure
 EndPoint End[20] = {}; // TODO fix this initialization
 long rowOffset = 250; // separation between rows (50cm for now)
-
+long Endx; Endy; //End of row position
 const double Pi = 3.1415926;
+
+// Movement Variables
+int encoderSpeed = 3; // encoder ticks per second
+double TicksPerDegree = 0.78; // Ratio of Ticks to the degrees turned
+long xOld; // last x position
+long yOld; // last y position
+
 ////////////////////////////
 //    MMSerial hedgehog support initialization
 //
@@ -708,7 +712,7 @@ void loop() {
 }  //end void loop()
  
 
-int RowCreate(Endx, Endy){ // TODO get rid of currentx and y and put in dataPacket.x and dataPacket.y
+void RowCreate(){ // TODO use unit vectors instead of trig
 // PathCreate Creates a series of checkpoints along the current path that the mower should follow. 
 // The path will be created 
   
@@ -739,7 +743,7 @@ int RowCreate(Endx, Endy){ // TODO get rid of currentx and y and put in dataPack
   Cpx=CP[0].x;
   Cpy=CP[0].y;
   currentC=0;
-  return NumberOfCPs;
+  return;
 }
 
 
@@ -768,18 +772,21 @@ void turnOneEighty(){
   Travel = LapNumber % 2 == 0 ? Travel : -1 * Travel;
 
   // Initiate 90 Deg Turn
-  Turn.pi(Travel).wait(); // Initiate Turn
+  Turn.pi(Travel).s(encoderSpeed).wait(); // Initiate Turn
  
 
   // Back up a little
-    Drive.pi(-20).wait();
+    Drive.pi(-20).s(encoderSpeed).wait();
   // May need to add virtual delay later
   // NOTE: Need to find correct backup distance by testing
 
   // Make another 90 Deg Turn
-  Turn.pi(Travel).wait(); // Initiate Turn
+  Turn.pi(Travel).s(encoderSpeed).wait(); // Initiate Turn
 
-  LapNumber += 1; // Increment Lap Number everytime a full rotation occurs
+  LapNumber++; // Increment Lap Number everytime a full turn occurs
+  Endx = End[LapNumber].x;
+  Endy = End[Lapnumber].y;
+  Forward();
   return;
 }
 
@@ -794,7 +801,7 @@ void turnOneEighty(){
 // }
 
 void Forward(){
-  Drive.pi(20).s(3); //specific distance to travel at a given speed
+  Drive.pi(20).s(encoderSpeed); //specific distance to travel at a given speed
   //ensure that this requires a forward command at regular intervals to continue
   //prevent mower from getting a mind of its own
   return;
@@ -805,7 +812,7 @@ void AdjustPos(int Angle){
   //turn by desired amount
 
   int Travel = round(int Angle * TicksPerDegree);
-  Turn.pi(Travel).wait(); // Initiate Turn
+  Turn.pi(Travel).s(encoderSpeed).wait(); // Initiate Turn
   Forward(); //start forward protocol after adjustment
   return;
 }
@@ -922,12 +929,8 @@ void createEndPoints {
       End[ii].y = y4;
     }// conditional end
   } // loop end
+  Endx=End[0].x;
+  Endy=End[0].y;
 } // EndPoint function end
-
-//TODO EndPoint Increment
-void IncrementEP {
-  //similar to checkpoint incrementing
-  //
-}
 
 
