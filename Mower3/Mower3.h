@@ -78,3 +78,15 @@ struct MMBeaconPacket
 
     uni_8x2_16   CRC_16;     //CRC used to verify complete packet correctness
 };
+
+typedef struct
+{
+  long x;
+  long y;
+} CheckPoint;
+
+typedef struct
+{
+  long x;
+  long y;
+} EndPoint;
