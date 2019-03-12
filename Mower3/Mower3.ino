@@ -1,7 +1,7 @@
 //#include <SoftwareSerial.h>  //needed only if using UNO(one hardware serial port) board.
 //  recode Serial1 and Serial2 uses as SoftwareSerial.
 #include "Mower3.h"
-
+#include <Kangaroo.h>
 //global constants, these do not change during a given execution
 
 //operating mode values (OPMODE) can be combined as bits and tested during execution separately
@@ -68,8 +68,7 @@ bool beaconRead;
 // Path Creation Variables
 int currentC; // index for current checkpoint in array
 int LapNumber = 0; // incremental variable
-struct CheckPoint {long x; long y;}; // Checkpoint Structure
-CheckPoint CP[50] = {}; // TODO fix this initialization
+CheckPoint CP[50]; // TODO fix this initialization
 long separation = 2000; // Separation Distance between checkpoints
 long Cpx; // checkpoint X
 long Cpy; // Checkpoint Y
@@ -79,11 +78,11 @@ long xb1, xb2, xb3,xb4,yb1,yb2,yb3,yb4; //beacon positions
 int ta; // turn angle global variable
 long offset = 1000; //total offset
 long x1,x2,x3,x4,y1,y2,y3,y4; // offset beacon positions
-struct EndPoint {long x; long y;}; // End of Row Structure
-EndPoint End[20] = {}; // TODO fix this initialization
+EndPoint End[20]; // TODO fix this initialization
 long rowOffset = 250; // separation between rows (50cm for now)
 long Endx, Endy; //End of row position
 const double Pi = 3.1415926;
+int numberOfRows = 0;
 
 // Movement Variables
 int encoderSpeed = 3; // encoder ticks per second
@@ -91,13 +90,18 @@ double TicksPerDegree = 0.78; // Ratio of Ticks to the degrees turned
 long xOld; // last x position
 long yOld; // last y position
 
+KangarooSerial  K(Serial2);
+KangarooChannel Drive(K, 'D');
+KangarooChannel Turn(K, 'T');
+
 ////////////////////////////
 //    MMSerial hedgehog support initialization
 ///////////////////////////
 
+
 void setup_hedgehog() {
 
-  Serial1.begin(MMBAUDRATE); // set speed for hedgehog
+  // Serial1.begin(MMBAUDRATE); // set Baud speed for hedgehog
 
   //init any required global MM variables with their default values
   hedgehog_serial_buf_ofs = 0;
@@ -674,7 +678,7 @@ void setup()
     Serial.flush();
 
   }
-
+  Serial2.begin(KRBAUDRATE);
   //  and replace references to MMSerial with Serial1 and vice-versa
   Serial1.begin(MMBAUDRATE);  //use Serial1 to avoid the SoftwareSerial library
 
@@ -774,53 +778,35 @@ void turnOneEighty(){
   //double travel = 
 
   int Travel = round(90 * TicksPerDegree); // Ticks to make a 90 deg turn
-  
-//   // Determine Direction of Turn to Make
-//   if(LapNumber % 2 == 0){
-//     Travel = Travel;
-//   } else if(LapNumber % 2 != 0) {
-//     Travel *= -1;
-//   } else(){
-//     // Some ERROR Protocol
-//   }
-  
+    
   // Equivalent of If statement
   // Syntax 'ConditionalStatement' ? 'ValueifTrue' : 'ValueifFalse'
   Travel = LapNumber % 2 == 0 ? Travel : -1 * Travel;
 
   // Initiate 90 Deg Turn
-  Turn.pi(Travel).s(encoderSpeed).wait(); // Initiate Turn
+  Turn.pi(Travel,encoderSpeed).wait(); // Initiate Turn
  
 
   // Back up a little
-    Drive.pi(-20).s(encoderSpeed).wait();
+  Drive.pi(-20,encoderSpeed).wait();
   // May need to add virtual delay later
   // NOTE: Need to find correct backup distance by testing
 
   // Make another 90 Deg Turn
-  Turn.pi(Travel).s(encoderSpeed).wait(); // Initiate Turn
+  Turn.pi(Travel,encoderSpeed).wait(); // Initiate Turn
 
   LapNumber++; // Increment Lap Number everytime a full turn occurs
   Endx = End[LapNumber].x;
-  Endy = End[Lapnumber].y;
+  Endy = End[LapNumber].y;
   Forward();
   return;
 }
 
-// RoundTo is a Function for Rounding Values to specified Precision. 2 Fields:
-// 1) Value = Value to be rounded
-// 2) Precision = decimal places to be rounded
-// Value must be declared as the double type
-// double RoundTo(Value,precision){
-//   int foo = Value * (10^precision);
-//   Value = foo / (10^precision);
-//   return Value;
-// }
 
 // TODO Test this function
 // TODO call this in relevant loop_hedgehog position
 void Forward(){
-  Drive.pi(20).s(encoderSpeed); //specific distance to travel at a given speed
+  Drive.pi(20,encoderSpeed).wait(); //specific distance to travel at a given speed
   //ensure that this requires a forward command at regular intervals to continue
   //prevent mower from getting a mind of its own
   return;
@@ -833,7 +819,7 @@ void AdjustPos(){
   //turn by desired amount
 
   int Travel = round(ta * TicksPerDegree);
-  Turn.pi(Travel).s(encoderSpeed).wait(); // Initiate Turn
+  Turn.pi(Travel,encoderSpeed).wait(); // Initiate Turn
   Forward(); //start forward protocol after adjustment
   return;
 }
@@ -921,9 +907,9 @@ void createEndPoints() {
   long magTwoThree = sqrt((x3-x2)^2+(y3-y2)^2);
   
   if (magOneFour >= magTwoThree){
-    int numberOfRows = ceil(magOneFour/rowOffset);  
+    numberOfRows = ceil(magOneFour/rowOffset);  
   } else {
-    int numberOfRows = ceil(magTwoThree/rowOffset);
+    numberOfRows = ceil(magTwoThree/rowOffset);
   }
   
   // unit vectors between 1-4 and 2-3
@@ -934,7 +920,7 @@ void createEndPoints() {
 
   //odd number of rows end point on 2-3 vector
   //even number of rows end point on 1-4 vector
-  for (ii=0, ii <= numberOfRows, ii++){
+  for (int ii=0; ii <= numberOfRows; ii++){
     if (ii==0) {
       End[ii].x = x2;
       End[ii].y = y2;
@@ -959,5 +945,3 @@ void createEndPoints() {
   Endy=End[0].y;
   return;
 } // EndPoint function end
-
-
