@@ -766,7 +766,7 @@ void RowCreate(){ // TODO use unit vectors instead of trig
   return;
 }
 
-// TODO Test this function
+
 // TODO call this in relevant loop_hedgehog position
 void turnOneEighty(){
   // Turning function for mower at end of each lap
@@ -798,15 +798,15 @@ void turnOneEighty(){
   LapNumber++; // Increment Lap Number everytime a full turn occurs
   Endx = End[LapNumber].x;
   Endy = End[LapNumber].y;
-  Forward();
+  // Forward();
   return;
 }
 
 
 // TODO Test this function
 // TODO call this in relevant loop_hedgehog position
-void Forward(){
-  Drive.pi(20,encoderSpeed).wait(); //specific distance to travel at a given speed
+void Forward(dist){
+  Drive.pi(dist,encoderSpeed).wait(); //specific distance to travel at a given speed
   //ensure that this requires a forward command at regular intervals to continue
   //prevent mower from getting a mind of its own
   return;
@@ -820,7 +820,7 @@ void AdjustPos(){
 
   int Travel = round(ta * TicksPerDegree);
   Turn.pi(Travel,encoderSpeed).wait(); // Initiate Turn
-  Forward(); //start forward protocol after adjustment
+  Forward(20); //start forward protocol after adjustment
   return;
 }
 
@@ -832,6 +832,7 @@ void checkIncrementCP(){
   //Check w/ tolerance to Cpx & Cpy
   
   long mag = sqrt((Cpx-dataPacket.x)^2+(Cpy-dataPacket.y)^2); // Distance to CP
+  if (Endx= Cpx)
   if (mag <= tolerance){ //if distance between check point and current pos is less than tolerance do stuff
     //increment to next CP
     currentC++;  //increment Checkpoint array index
@@ -945,3 +946,4 @@ void createEndPoints() {
   Endy=End[0].y;
   return;
 } // EndPoint function end
+
