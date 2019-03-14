@@ -83,6 +83,7 @@ long rowOffset = 250; // separation between rows (50cm for now)
 long Endx, Endy; //End of row position
 const double Pi = 3.1415926;
 int numberOfRows = 0;
+// long dist;
 
 // Movement Variables
 int encoderSpeed = 3; // encoder ticks per second
@@ -510,6 +511,27 @@ void loop_hedgehog() {
   //establish some reasonable bracketing limits within which there will be no
   //movement commands and beyond which there will be.
   //This may have to be trial and error.
+  if(CurrentC == 0){
+  RowCreate();
+  }
+  
+  checkIncrementCP();
+  thetaAdjust();
+  if(ta >= tol){
+    AdjustPos(); 
+    
+  }  
+  if(Cpx == 0 && CPy == 0){ // TODO Conditional telling if current checkpoint is the Endpoint, and we're at it
+                            // TODO Check the data types for the CPx & CPy when unitialized
+  // if (Cpx
+      turnOneEighty;  
+      CurrentC = 0; // Reinitialize the Checkpoints
+  } else {  // TODO insert some conditional to control forward movement
+    Forward(20); // TODO make travel distance equal to distance between CPs
+  }
+  
+
+  
 
   //clear buffer and any other data for next read
   clearReadBuffer();
@@ -762,11 +784,11 @@ void RowCreate(){ // TODO use unit vectors instead of trig
   }
   Cpx=CP[0].x;
   Cpy=CP[0].y;
-  currentC=0;
+  // currentC=0;
   return;
 }
 
-// TODO Test this function
+// TODO Correct TicksPerDegree
 // TODO call this in relevant loop_hedgehog position
 void turnOneEighty(){
   // Turning function for mower at end of each lap
@@ -805,8 +827,8 @@ void turnOneEighty(){
 
 // TODO Test this function
 // TODO call this in relevant loop_hedgehog position
-void Forward(){
-  Drive.pi(20,encoderSpeed).wait(); //specific distance to travel at a given speed
+void Forward(long dist){
+  Drive.pi(dist,encoderSpeed); //specific distance to travel at a given speed
   //ensure that this requires a forward command at regular intervals to continue
   //prevent mower from getting a mind of its own
   return;
@@ -820,7 +842,7 @@ void AdjustPos(){
 
   int Travel = round(ta * TicksPerDegree);
   Turn.pi(Travel,encoderSpeed).wait(); // Initiate Turn
-  Forward(); //start forward protocol after adjustment
+  Forward(20); //start forward protocol after adjustment
   return;
 }
 
@@ -868,7 +890,9 @@ void offsetCreate(){ // Create offset positions between beacons for path creatio
   float TxThreeFour = (xb4-xb3)/magThreeFour; 
   float TyThreeFour = (yb4-yb3)/magThreeFour;
 
-  // Psuedo offset position along 1-2 and 3-4
+  // Psuedo 
+  
+  position along 1-2 and 3-4
   long x1prime = xb1 + r*TxOneTwo;
   long y1prime = yb1 + r*TyOneTwo;
   long x2prime = xb2 - r*TxOneTwo;
