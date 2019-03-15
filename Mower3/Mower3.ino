@@ -79,6 +79,7 @@ int ta; // turn angle global variable
 long offset = 1000; //total offset
 long x1,x2,x3,x4,y1,y2,y3,y4; // offset beacon positions
 EndPoint End[20]; // TODO fix this initialization
+// EndPoint[20] = { 0 }; ^^^ Could be used instead of above line
 long rowOffset = 250; // separation between rows (50cm for now)
 long Endx, Endy; //End of row position
 const double Pi = 3.1415926;
