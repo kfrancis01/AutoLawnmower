@@ -764,6 +764,10 @@ void RowCreate(){ // TODO use unit vectors instead of trig
   long theta = round(acos((Endx-dataPacket.x)/RowMag)); //Radians
   int NumberOfCPs = ceil(RowMag / separation);   // Number of Checkpoints along the path
   // Need to Round up every time
+  
+  // RESET CP.x & CP.y to all Zeros
+  memset(CP.x, 0, sizeof(CP.x));
+  memset(CP.y, 0, sizeof(CP.y));
  
   for(int ii=0; ii<=NumberOfCPs; ii++){
 
