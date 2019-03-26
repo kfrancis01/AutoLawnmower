@@ -66,7 +66,7 @@ bool beaconRead;
 
 // TODO check that all variables are accounted for
 // Path Creation Variables
-int currentC; // index for current checkpoint in array
+int currentC = 0; // index for current checkpoint in array
 int LapNumber = 0; // incremental variable
 CheckPoint CP[50]; // TODO fix this initialization
 long separation = 2000; // Separation Distance between checkpoints
@@ -84,6 +84,7 @@ long rowOffset = 250; // separation between rows (50cm for now)
 long Endx, Endy; //End of row position
 const double Pi = 3.1415926;
 int numberOfRows = 0;
+int NumberOfCPs;
 // long dist;
 
 // Movement Variables
@@ -513,21 +514,21 @@ void loop_hedgehog() {
   //movement commands and beyond which there will be.
   //This may have to be trial and error.
   if(CurrentC == 0){
-  RowCreate();
+  RowCreate(); // Create Path for the mower to follow via several checkpoints with equal spacing
+  Forward(20); // TODO make travel distance equal to distance between CPs
   }
   
-  checkIncrementCP();
-  thetaAdjust();
-  if(ta >= tol){
-    AdjustPos(); 
+  checkIncrementCP(); // Check if the mower position is near Checkpoint positions
+  thetaAdjust(); // check to see if the moweer needs to adjust on its path, and by how much
+  if(ta >= tol){ 
+    AdjustPos(); // Make Adjustment based on theteAdjust
     
   }  
-  if(Cpx == 0 && CPy == 0){ // TODO Conditional telling if current checkpoint is the Endpoint, and we're at it
-                            // TODO Check the data types for the CPx & CPy when unitialized
-  // if (Cpx
+
+ if (currentC >= NumberOfCPs){ // Conditional telling if current checkpoint is the Endpoint, and we're at it
       turnOneEighty;  
-      CurrentC = 0; // Reinitialize the Checkpoints
-  } else {  // TODO insert some conditional to control forward movement
+      currentC = 0; // Reinitialize the Checkpoints
+  } else {  // TODO [maybe] insert some conditional to control forward movement
     Forward(20); // TODO make travel distance equal to distance between CPs
   }
   
@@ -762,7 +763,7 @@ void RowCreate(){ // TODO use unit vectors instead of trig
   // NOTE: Need to Clear CPs array evertime this command is initialized  
   long RowMag = (sqrt( (Endx-dataPacket.x)^2 + (Endy-dataPacket.y)^2 ));
   long theta = round(acos((Endx-dataPacket.x)/RowMag)); //Radians
-  int NumberOfCPs = ceil(RowMag / separation);   // Number of Checkpoints along the path
+  NumberOfCPs = ceil(RowMag / separation);   // Number of Checkpoints along the path
   // Need to Round up every time
   
   // RESET CP.x & CP.y to all Zeros
@@ -789,7 +790,7 @@ void RowCreate(){ // TODO use unit vectors instead of trig
   }
   Cpx=CP[0].x;
   Cpy=CP[0].y;
-  // currentC=0;
+//   currentC=0;
   return;
 }
 
