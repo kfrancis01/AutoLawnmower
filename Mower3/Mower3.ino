@@ -15,7 +15,7 @@ const int DEBUG = 1;       //set to 0 for production, 1 will give Serial monitor
 const int OPMODE=DEBUG;  //should likely be all 0's for full up production use.
 
 const long ARBAUDRATE= 57600;
-const unsigned long microsPerReading= 100;  //number of microseconds between work efforts
+const unsigned long microsPerReading= 1000;  //number of microseconds between work efforts
 //as measured within loop()
 
 //global variables available everywhere to everything
@@ -34,7 +34,7 @@ unsigned long microsNow= 0;
 
 //SoftwareSerial MMSerial(19, 18); //Input(RX),Output(TX): only needed for UNO
 const long MMBAUDRATE= 57600; //baudrate for Marvelmind configured to transmit data
-const long KRBAUDRATE= 57600;  //kangaroo baudrate
+const long KRBAUDRATE= 9600;  //kangaroo baudrate
 const unsigned long hhLoopWait= 1000;
 const unsigned char hiResPacketSize= 27;  //HiResPacketSize less CRC
 const unsigned char beaconPacketSize= 62;  //BeaconPacketSize less CRC
@@ -68,7 +68,7 @@ bool beaconRead;
 // Path Creation Variables
 int currentC = 0; // index for current checkpoint in array
 int LapNumber = 0; // incremental variable
-CheckPoint CP[50]; // TODO fix this initialization
+CheckPoint CP[50]; // CheckPoint array
 long separation = 2000; // Separation Distance between checkpoints
 long Cpx; // checkpoint X
 long Cpy; // Checkpoint Y
@@ -78,7 +78,7 @@ long xb1, xb2, xb3,xb4,yb1,yb2,yb3,yb4; //beacon positions
 int ta; // turn angle global variable
 long offset = 1000; //total offset
 long x1,x2,x3,x4,y1,y2,y3,y4; // offset beacon positions
-EndPoint End[20]; // TODO fix this initialization
+EndPoint End[20]; // EndPoint array
 // EndPoint[20] = { 0 }; ^^^ Could be used instead of above line
 long rowOffset = 280; // separation between rows (28cm for now)
 long Endx, Endy; //End of row position
@@ -99,6 +99,9 @@ KangarooSerial  K(Serial2);
 KangarooChannel Drive(K, 'D');
 KangarooChannel Turn(K, 'T');
 
+// Bluetooth section
+
+
 ////////////////////////////
 //    MMSerial hedgehog support initialization
 ///////////////////////////
@@ -106,7 +109,7 @@ KangarooChannel Turn(K, 'T');
 
 void setup_hedgehog() {
 
-  // Serial1.begin(MMBAUDRATE); // set Baud speed for hedgehog
+  Serial1.begin(MMBAUDRATE); // set Baud speed for hedgehog
 
   //init any required global MM variables with their default values
   hedgehog_serial_buf_ofs = 0;
@@ -190,6 +193,8 @@ void setup_hedgehog() {
   // ADD ANY ADDITIONAL SET UP PROTOCOLS HERE
   // AND ADD MOVEMENT AND ADDITIONAL PATH CREATION STEPS IN LOOP_HEDGEHOG
   /////////////////////////////////////////////////////////////////////////
+  offsetCreate(); // create beacon offset positions
+  createEndPoints(); // create row end point array
   
   //now the beaconPacket is ready to pass into mower ambulate methods after each HiResPacket!!!
   //ready to use continuous Arduino looping.
