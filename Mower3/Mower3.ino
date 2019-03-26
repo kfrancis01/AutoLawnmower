@@ -80,16 +80,18 @@ long offset = 1000; //total offset
 long x1,x2,x3,x4,y1,y2,y3,y4; // offset beacon positions
 EndPoint End[20]; // TODO fix this initialization
 // EndPoint[20] = { 0 }; ^^^ Could be used instead of above line
-long rowOffset = 250; // separation between rows (50cm for now)
+long rowOffset = 280; // separation between rows (28cm for now)
 long Endx, Endy; //End of row position
 const double Pi = 3.1415926;
 int numberOfRows = 0;
 int NumberOfCPs;
+int moveDist = 15; // distance to move in forward protocol
 // long dist;
 
 // Movement Variables
-int encoderSpeed = 3; // encoder ticks per second
-double TicksPerDegree = 0.78; // Ratio of Ticks to the degrees turned
+int encoderSpeed = 60; // encoder ticks per second
+double TicksPerDegree = 1.56; // Ratio of Ticks to the degrees turned
+double TicksPerCM = 4.85; // pulses per centimeter
 long xOld; // last x position
 long yOld; // last y position
 
@@ -515,7 +517,7 @@ void loop_hedgehog() {
   //This may have to be trial and error.
   if(CurrentC == 0){
   RowCreate(); // Create Path for the mower to follow via several checkpoints with equal spacing
-  Forward(20); // TODO make travel distance equal to distance between CPs
+  Forward(moveDist); // TODO make travel distance equal to distance between CPs
   }
   
   checkIncrementCP(); // Check if the mower position is near Checkpoint positions
@@ -529,7 +531,7 @@ void loop_hedgehog() {
       turnOneEighty;  
       currentC = 0; // Reinitialize the Checkpoints
   } else {  // TODO [maybe] insert some conditional to control forward movement
-    Forward(20); // TODO make travel distance equal to distance between CPs
+    Forward(moveDist); // TODO make travel distance less than checkpoint tolerance but great enough to avoid choppy movement
   }
   
 
@@ -755,7 +757,6 @@ void loop() {
 // MOVEMENT AND PATH CREATION FUNCTIONS //
 //////////////////////////////////////////
 
-// TODO Test this function
 // TODO call this in relevant loop_hedgehog position
 void RowCreate(){ // TODO use unit vectors instead of trig
 // PathCreate Creates a series of checkpoints along the current path that the mower should follow. 
@@ -816,7 +817,7 @@ void turnOneEighty(){
  
 
   // Back up a little
-  Drive.pi(-20,encoderSpeed).wait();
+  Drive.pi(136,encoderSpeed).wait();
   // May need to add virtual delay later
   // NOTE: Need to find correct backup distance by testing
 
@@ -826,12 +827,11 @@ void turnOneEighty(){
   LapNumber++; // Increment Lap Number everytime a full turn occurs
   Endx = End[LapNumber].x;
   Endy = End[LapNumber].y;
-  Forward();
   return;
 }
 
 
-// TODO Test this function
+
 // TODO call this in relevant loop_hedgehog position
 void Forward(long dist){
   Drive.pi(dist,encoderSpeed); //specific distance to travel at a given speed
@@ -840,7 +840,7 @@ void Forward(long dist){
   return;
 }
 
-// TODO Test this function
+
 // TODO call this in relevant loop_hedgehog position
 void AdjustPos(){
   //given a theta in degrees
@@ -848,11 +848,10 @@ void AdjustPos(){
 
   int Travel = round(ta * TicksPerDegree);
   Turn.pi(Travel,encoderSpeed).wait(); // Initiate Turn
-  Forward(20); //start forward protocol after adjustment
+  Forward(moveDist); //start forward protocol after adjustment
   return;
 }
 
-// TODO Test this function
 // TODO call this in relevant loop_hedgehog position
 void checkIncrementCP(){
   // CP array
@@ -869,7 +868,6 @@ void checkIncrementCP(){
   return;
 }
 
-// TODO Test this function
 // TODO call this in relevant loop_hedgehog position
 void thetaAdjust(){
   float rActual = sqrt( (dataPacket.x - xOld)^2 + (dataPacket.y - yOld)^2); // distance traveled from last measurement
@@ -880,7 +878,6 @@ void thetaAdjust(){
   return; // Angle to adjust by in degrees
 }
 
-// TODO Test this function
 // TODO call this in setup_hedgehog
 void offsetCreate(){ // Create offset positions between beacons for path creation
   // xb1, yb1, xb2, yb2, xb3, yb3, xb4, yb4 Beacon positions
@@ -930,7 +927,6 @@ void offsetCreate(){ // Create offset positions between beacons for path creatio
   return;
 }
 
-// TODO Test this function
 // TODO call this in setup_hedgehog
 void createEndPoints() {
   long magOneFour = sqrt((x4-x1)^2+(y4-y1)^2);
