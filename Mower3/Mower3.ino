@@ -520,14 +520,14 @@ void loop_hedgehog() {
   //establish some reasonable bracketing limits within which there will be no
   //movement commands and beyond which there will be.
   //This may have to be trial and error.
-  if(CurrentC == 0){
+  if(currentC == 0){
   RowCreate(); // Create Path for the mower to follow via several checkpoints with equal spacing
   Forward(moveDist); // TODO make travel distance equal to distance between CPs
   }
   
   checkIncrementCP(); // Check if the mower position is near Checkpoint positions
   thetaAdjust(); // check to see if the moweer needs to adjust on its path, and by how much
-  if(ta >= tol){ 
+  if(ta >= tolerance){ 
     AdjustPos(); // Make Adjustment based on theteAdjust
     
   }  
@@ -773,8 +773,8 @@ void RowCreate(){ // TODO use unit vectors instead of trig
   // Need to Round up every time
   
   // RESET CP.x & CP.y to all Zeros
-  memset(CP.x, 0, sizeof(CP.x));
-  memset(CP.y, 0, sizeof(CP.y));
+//  memset(CP.x, 0, sizeof(CP.x));
+//  memset(CP.y, 0, sizeof(CP.y));
  
   for(int ii=0; ii<=NumberOfCPs; ii++){
 
@@ -900,7 +900,7 @@ void offsetCreate(){ // Create offset positions between beacons for path creatio
 
   // Psuedo 
   
-  position along 1-2 and 3-4
+//  position along 1-2 and 3-4
   long x1prime = xb1 + r*TxOneTwo;
   long y1prime = yb1 + r*TyOneTwo;
   long x2prime = xb2 - r*TxOneTwo;
