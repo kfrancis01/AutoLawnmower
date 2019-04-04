@@ -7,7 +7,7 @@
 //operating mode values (OPMODE) can be combined as bits and tested during execution separately
 //   and set at compile time and never modified during execution.
 //   if printing anything TESTING must be set to setup the Serial0 port
-const int DEBUG = 1;       //set to 0 for production, 1 will give Serial monitor info
+const int DEBUG = 0;       //set to 0 for production, 1 will give Serial monitor info
 //OPMODE uses compile time math to set OPMODE flags.
 //const int OPMODE2= 2;     //OPMODES are set using bits, powers of 2,
 //    use this and/or next one for other reasons
@@ -86,6 +86,7 @@ const double Pi = 3.1415926;
 int numberOfRows = 0;
 int NumberOfCPs;
 int moveDist = 15; // distance to move in forward protocol
+unsigned long microsLast = 0;
 // long dist;
 
 // Movement Variables
@@ -520,28 +521,34 @@ void loop_hedgehog() {
   //establish some reasonable bracketing limits within which there will be no
   //movement commands and beyond which there will be.
   //This may have to be trial and error.
-  if(currentC == 0){
-  RowCreate(); // Create Path for the mower to follow via several checkpoints with equal spacing
-  Forward(moveDist); // TODO make travel distance equal to distance between CPs
-  }
   
+if(currentC == 0){
+  RowCreate(); // Create Path for the mower to follow via several checkpoints with equal spacing
+  Forward(moveDist); // Move mower forward by small amount
+}
+
   checkIncrementCP(); // Check if the mower position is near Checkpoint positions
-  thetaAdjust(); // check to see if the moweer needs to adjust on its path, and by how much
-  if(ta >= tolerance){ 
-    AdjustPos(); // Make Adjustment based on theteAdjust
-    
-  }  
+ 
+if ((microsNow - microsLast) >= 10*microsPerReading) { // Calculate thetaAdjust every 10 cycles, or can make this a constant time interval
+    thetaAdjust(); // check to see if the moweer needs to adjust on its path, and by how much
+    microsLast = micros();
+} // end thetaAdjust Statement
+  
+if(ta >= tolerance){ 
+  AdjustPos(); // Make Adjustment based on thetaAdjust
+  ta = 0;
+}  // end Adjustment statement
 
  if (currentC >= NumberOfCPs){ // Conditional telling if current checkpoint is the Endpoint, and we're at it
       turnOneEighty;  
       currentC = 0; // Reinitialize the Checkpoints
   } else {  // TODO [maybe] insert some conditional to control forward movement
     Forward(moveDist); // TODO make travel distance less than checkpoint tolerance but great enough to avoid choppy movement
-  }
+}
   
 
   
-
+ 
   //clear buffer and any other data for next read
   clearReadBuffer();
 
@@ -762,7 +769,6 @@ void loop() {
 // MOVEMENT AND PATH CREATION FUNCTIONS //
 //////////////////////////////////////////
 
-// TODO call this in relevant loop_hedgehog position
 void RowCreate(){ // TODO use unit vectors instead of trig
 // PathCreate Creates a series of checkpoints along the current path that the mower should follow. 
 // The path will be created 
@@ -801,7 +807,6 @@ void RowCreate(){ // TODO use unit vectors instead of trig
 }
 
 // TODO Correct TicksPerDegree
-// TODO call this in relevant loop_hedgehog position
 void turnOneEighty(){
   // Turning function for mower at end of each lap
 
@@ -837,7 +842,6 @@ void turnOneEighty(){
 
 
 
-// TODO call this in relevant loop_hedgehog position
 void Forward(long dist){
   Drive.pi(dist,encoderSpeed); //specific distance to travel at a given speed
   //ensure that this requires a forward command at regular intervals to continue
@@ -846,7 +850,6 @@ void Forward(long dist){
 }
 
 
-// TODO call this in relevant loop_hedgehog position
 void AdjustPos(){
   //given a theta in degrees
   //turn by desired amount
@@ -857,7 +860,6 @@ void AdjustPos(){
   return;
 }
 
-// TODO call this in relevant loop_hedgehog position
 void checkIncrementCP(){
   // CP array
   // lapnumber = row number of CP matrix
@@ -873,7 +875,6 @@ void checkIncrementCP(){
   return;
 }
 
-// TODO call this in relevant loop_hedgehog position
 void thetaAdjust(){
   float rActual = sqrt( (dataPacket.x - xOld)^2 + (dataPacket.y - yOld)^2); // distance traveled from last measurement
   float rDes = sqrt( (Cpx - dataPacket.x)^2 + (Cpy - dataPacket.y)^2); // distance to CP
