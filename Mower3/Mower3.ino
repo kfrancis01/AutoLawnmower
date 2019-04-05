@@ -535,9 +535,11 @@ if (Status == 1){
 
     checkIncrementCP(); // Check if the mower position is near Checkpoint positions
  
-  if ((microsNow - microsLast) >= 10*microsPerReading) { // Calculate thetaAdjust every 10 cycles, or can make this a constant time interval
+  if ((microsNow - microsLast) >= 1e6) { // Calculate thetaAdjust every 10 cycles, or can make this a constant time interval
       thetaAdjust(); // check to see if the moweer needs to adjust on its path, and by how much
       microsLast = micros();
+      xOld = dataPacket.x; // set old x and y position as hedge position before update
+      yOld = dataPacket.y;
   } // end thetaAdjust Statement
   
   if(ta >= tolerance){ 
@@ -783,12 +785,10 @@ void loop() {
     if (firstLoop){
       loop_hedgehog();
       xOld = dataPacket.x;  // set old x and y position as hedge position after update for first hedge loop
-      yOld = dataPacket.y;
+      yOld = dataPacket.y; // 
       firstLoop = 0;
     }
     else{
-      xOld = dataPacket.x; // set old x and y position as hedge position before update
-      yOld = dataPacket.y;
       loop_hedgehog();// MMSerial hedgehog service loop
     }
 
