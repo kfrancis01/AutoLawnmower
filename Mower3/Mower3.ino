@@ -3,11 +3,15 @@
 #include "Mower3.h"
 #include <Kangaroo.h>
 //global constants, these do not change during a given execution
-
+#define ledPinRed 13
+#define ledPinYellow 12
+#define ledPinGreen 11
+int state = 0;
+int Status = 0;
 //operating mode values (OPMODE) can be combined as bits and tested during execution separately
 //   and set at compile time and never modified during execution.
 //   if printing anything TESTING must be set to setup the Serial0 port
-const int DEBUG = 0;       //set to 0 for production, 1 will give Serial monitor info
+const int DEBUG = 1;       //set to 0 for production, 1 will give Serial monitor info
 //OPMODE uses compile time math to set OPMODE flags.
 //const int OPMODE2= 2;     //OPMODES are set using bits, powers of 2,
 //    use this and/or next one for other reasons
@@ -15,7 +19,7 @@ const int DEBUG = 0;       //set to 0 for production, 1 will give Serial monitor
 const int OPMODE=DEBUG;  //should likely be all 0's for full up production use.
 
 const long ARBAUDRATE= 57600;
-const unsigned long microsPerReading= 1000;  //number of microseconds between work efforts
+const unsigned long microsPerReading= 100;  //number of microseconds between work efforts
 //as measured within loop()
 
 //global variables available everywhere to everything
@@ -34,6 +38,7 @@ unsigned long microsNow= 0;
 
 //SoftwareSerial MMSerial(19, 18); //Input(RX),Output(TX): only needed for UNO
 const long MMBAUDRATE= 57600; //baudrate for Marvelmind configured to transmit data
+const long BTBAUDRATE= 9600; //Bluetooth baudrate
 const long KRBAUDRATE= 9600;  //kangaroo baudrate
 const unsigned long hhLoopWait= 1000;
 const unsigned char hiResPacketSize= 27;  //HiResPacketSize less CRC
@@ -149,29 +154,7 @@ void setup_hedgehog() {
     //delay(1);  //just wait a bit and look again
   }
 
-  // Since beacon# is based on order in which they come in
-  // redefines x# and y# based on actual beacon address
-  if (beaconPacket.beacon1==1){xb1=beaconPacket.xb1; yb1=beaconPacket.yb1;}
-  else if (beaconPacket.beacon1==2){xb2=beaconPacket.xb1; yb2=beaconPacket.yb1;}
-  else if (beaconPacket.beacon1==3){xb3=beaconPacket.xb1; yb3=beaconPacket.yb1;}
-  else if (beaconPacket.beacon1==4){xb4=beaconPacket.xb1; yb4=beaconPacket.yb1;}
 
-  if (beaconPacket.beacon2==1){xb1=beaconPacket.xb2; yb1=beaconPacket.yb2;}
-  else if (beaconPacket.beacon2==2){xb2=beaconPacket.xb2; yb2=beaconPacket.yb2;}
-  else if (beaconPacket.beacon2==3){xb3=beaconPacket.xb2; yb3=beaconPacket.yb2;}
-  else if (beaconPacket.beacon2==4){xb4=beaconPacket.xb2; yb4=beaconPacket.yb2;}
-
-  if (beaconPacket.beacon3==1){xb1=beaconPacket.xb3; yb1=beaconPacket.yb3;}
-  else if (beaconPacket.beacon3==2){xb2=beaconPacket.xb3; yb2=beaconPacket.yb3;}
-  else if (beaconPacket.beacon3==3){xb3=beaconPacket.xb3; yb3=beaconPacket.yb3;}
-  else if (beaconPacket.beacon3==4){xb4=beaconPacket.xb3; yb4=beaconPacket.yb3;}
-
-  if (beaconPacket.beacon4==1){xb1=beaconPacket.xb4; yb1=beaconPacket.yb4;}
-  else if (beaconPacket.beacon4==2){xb2=beaconPacket.xb4; yb2=beaconPacket.yb4;}
-  else if (beaconPacket.beacon4==3){xb3=beaconPacket.xb4; yb3=beaconPacket.yb4;}
-  else if (beaconPacket.beacon4==4){xb4=beaconPacket.xb4; yb4=beaconPacket.yb4;}
-  //end of redefined beacon positions
-  
   //check the Beacon CRC
   unsigned int tmp= hedgehog_set_crc16( &(beaconPacket.destAddr), beaconPacketSize);
 
@@ -431,6 +414,28 @@ void find_beacon() {
   //transfer packet into Packet structures
   if ( beaconType) {
     transferBeaconPacket( &(hedgehog_serial_buf[bufndx]));
+    // Since beacon# is based on order in which they come in
+    // redefines x# and y# based on actual beacon address
+    if (beaconPacket.beacon1==1){xb1=beaconPacket.xb1; yb1=beaconPacket.yb1;}
+    else if (beaconPacket.beacon1==2){xb2=beaconPacket.xb1; yb2=beaconPacket.yb1;}
+    else if (beaconPacket.beacon1==3){xb3=beaconPacket.xb1; yb3=beaconPacket.yb1;}
+    else if (beaconPacket.beacon1==4){xb4=beaconPacket.xb1; yb4=beaconPacket.yb1;}
+
+    if (beaconPacket.beacon2==1){xb1=beaconPacket.xb2; yb1=beaconPacket.yb2;}
+    else if (beaconPacket.beacon2==2){xb2=beaconPacket.xb2; yb2=beaconPacket.yb2;}
+    else if (beaconPacket.beacon2==3){xb3=beaconPacket.xb2; yb3=beaconPacket.yb2;}
+    else if (beaconPacket.beacon2==4){xb4=beaconPacket.xb2; yb4=beaconPacket.yb2;}
+
+    if (beaconPacket.beacon3==1){xb1=beaconPacket.xb3; yb1=beaconPacket.yb3;}
+    else if (beaconPacket.beacon3==2){xb2=beaconPacket.xb3; yb2=beaconPacket.yb3;}
+    else if (beaconPacket.beacon3==3){xb3=beaconPacket.xb3; yb3=beaconPacket.yb3;}
+    else if (beaconPacket.beacon3==4){xb4=beaconPacket.xb3; yb4=beaconPacket.yb3;}
+
+    if (beaconPacket.beacon4==1){xb1=beaconPacket.xb4; yb1=beaconPacket.yb4;}
+    else if (beaconPacket.beacon4==2){xb2=beaconPacket.xb4; yb2=beaconPacket.yb4;}
+    else if (beaconPacket.beacon4==3){xb3=beaconPacket.xb4; yb3=beaconPacket.yb4;}
+    else if (beaconPacket.beacon4==4){xb4=beaconPacket.xb4; yb4=beaconPacket.yb4;}
+    //end of redefined beacon positions
     if ( OPMODE & DEBUG) {
       printBeaconPacket();
     }
@@ -521,31 +526,32 @@ void loop_hedgehog() {
   //establish some reasonable bracketing limits within which there will be no
   //movement commands and beyond which there will be.
   //This may have to be trial and error.
-  
-if(currentC == 0){
-  RowCreate(); // Create Path for the mower to follow via several checkpoints with equal spacing
-  Forward(moveDist); // Move mower forward by small amount
-}
 
-  checkIncrementCP(); // Check if the mower position is near Checkpoint positions
+if (Status == 1){
+  if(currentC == 0){
+    RowCreate(); // Create Path for the mower to follow via several checkpoints with equal spacing
+    Forward(moveDist); // Move mower forward by small amount
+  }
+
+    checkIncrementCP(); // Check if the mower position is near Checkpoint positions
  
-if ((microsNow - microsLast) >= 10*microsPerReading) { // Calculate thetaAdjust every 10 cycles, or can make this a constant time interval
-    thetaAdjust(); // check to see if the moweer needs to adjust on its path, and by how much
-    microsLast = micros();
-} // end thetaAdjust Statement
+  if ((microsNow - microsLast) >= 10*microsPerReading) { // Calculate thetaAdjust every 10 cycles, or can make this a constant time interval
+      thetaAdjust(); // check to see if the moweer needs to adjust on its path, and by how much
+      microsLast = micros();
+  } // end thetaAdjust Statement
   
-if(ta >= tolerance){ 
-  AdjustPos(); // Make Adjustment based on thetaAdjust
-  ta = 0;
-}  // end Adjustment statement
+  if(ta >= tolerance){ 
+    AdjustPos(); // Make Adjustment based on thetaAdjust
+    ta = 0;
+  }  // end Adjustment statement
 
- if (currentC >= NumberOfCPs){ // Conditional telling if current checkpoint is the Endpoint, and we're at it
-      turnOneEighty;  
-      currentC = 0; // Reinitialize the Checkpoints
-  } else {  // TODO [maybe] insert some conditional to control forward movement
-    Forward(moveDist); // TODO make travel distance less than checkpoint tolerance but great enough to avoid choppy movement
-}
-  
+  if (currentC >= NumberOfCPs){ // Conditional telling if current checkpoint is the Endpoint, and we're at it
+        turnOneEighty;  
+        currentC = 0; // Reinitialize the Checkpoints
+    } else {  // TODO [maybe] insert some conditional to control forward movement
+      Forward(moveDist); // TODO make travel distance less than checkpoint tolerance but great enough to avoid choppy movement
+  }
+}  
 
   
  
@@ -560,39 +566,45 @@ if(ta >= tolerance){
 void printHiResPacket() {
   if( OPMODE & DEBUG) {
     //header is mostly common between packet types
-    Serial.print( "0x");
-    Serial.print( dataPacket.destAddr, HEX);
-    Serial.print( ", ");
-    Serial.print( "0x");
-    Serial.print( dataPacket.packetType, HEX);
-    Serial.print( ", ");
-    Serial.print( "0x");
-    Serial.print( dataPacket.dataCode.w, HEX);
-    Serial.print( ", ");
-    Serial.print( "0x");
-    Serial.print( dataPacket.dataBytes, HEX);
-    Serial.print( ", ");
+//     Serial.print( "0x");
+//     Serial.print( dataPacket.destAddr, HEX);
+//     Serial.print( ", ");
+//     Serial.print( "0x");
+//     Serial.print( dataPacket.packetType, HEX);
+//     Serial.print( ", ");
+//     Serial.print( "0x");
+//     Serial.print( dataPacket.dataCode.w, HEX);
+//     Serial.print( ", ");
+//     Serial.print( "0x");
+//     Serial.print( dataPacket.dataBytes, HEX);
+//     Serial.print( ", ");
 
     Serial.print( dataPacket.timeStamp.v32);
     Serial.print( ", ");
+    Serial.print( "Hedge X = ");
+    Serial.print( " ");
     Serial.print( dataPacket.x);
     Serial.print( ", ");
+    Serial.print( "Hedge Y = ");
+    Serial.print( " ");
     Serial.print( dataPacket.y);
     Serial.print( ", ");
+    Serial.print( "Hedge Z = ");
+    Serial.print( " ");
     Serial.print( dataPacket.z);
     Serial.print( ", ");
-    Serial.print( "0x");
-    Serial.print( dataPacket.flags, HEX);
-    Serial.print( ", ");
-    Serial.print( dataPacket.hedgeAddr);
-    Serial.print( ", ");
-    Serial.print( dataPacket.hedgeOrientation.w);
-    Serial.print( ", ");
+//     Serial.print( "0x");
+//     Serial.print( dataPacket.flags, HEX);
+//     Serial.print( ", ");
+//     Serial.print( dataPacket.hedgeAddr);
+//     Serial.print( ", ");
+//     Serial.print( dataPacket.hedgeOrientation.w);
+//     Serial.print( ", ");
     Serial.print( dataPacket.timePassed.w);
-    Serial.print( ", ");
-    Serial.print( "0x");
-    Serial.print( dataPacket.CRC_16.w, HEX);
-    if ( !beaconRead) Serial.print( "   NO BEACON YET.");
+//     Serial.print( ", ");
+//     Serial.print( "0x");
+//     Serial.print( dataPacket.CRC_16.w, HEX);
+//     if ( !beaconRead) Serial.print( "   NO BEACON YET.");
     Serial.print( "\n");
   }
 }
@@ -619,44 +631,44 @@ void printBeaconPacket() {
     //unique part
     Serial.print( beaconPacket.numBeacons);
     Serial.print( ", ");
-    Serial.print( beaconPacket.beacon1);
+    Serial.print( "beacon1: ");
+    Serial.print( " ");
+    Serial.print( xb1);
     Serial.print( ", ");
-    Serial.print( beaconPacket.xb1);
-    Serial.print( ", ");
-    Serial.print( beaconPacket.yb1);
+    Serial.print( yb1);
     Serial.print( ", ");
     Serial.print( beaconPacket.zb1);
     Serial.print( ", ");
     Serial.print( "0x");
     Serial.print( beaconPacket.reserved1, HEX);
     Serial.print( ", ");
-    Serial.print( beaconPacket.beacon2);
+    Serial.print( "beacon2: ");
     Serial.print( ", ");
-    Serial.print( beaconPacket.xb2);
+    Serial.print( xb2);
     Serial.print( ", ");
-    Serial.print( beaconPacket.yb2);
+    Serial.print( yb2);
     Serial.print( ", ");
     Serial.print( beaconPacket.zb2);
     Serial.print( ", ");
     Serial.print( "0x");
     Serial.print( beaconPacket.reserved2, HEX);
     Serial.print( ", ");
-    Serial.print( beaconPacket.beacon3);
+    Serial.print( "beacon3: ");
     Serial.print( ", ");
-    Serial.print( beaconPacket.xb3);
+    Serial.print( xb3);
     Serial.print( ", ");
-    Serial.print( beaconPacket.yb3);
+    Serial.print( yb3);
     Serial.print( ", ");
     Serial.print( beaconPacket.zb3);
     Serial.print( ", ");
     Serial.print( "0x");
     Serial.print( beaconPacket.reserved3, HEX);
     Serial.print( ", ");
-    Serial.print( beaconPacket.beacon4);
+    Serial.print( "beacon4: ");
     Serial.print( ", ");
-    Serial.print( beaconPacket.xb4);
+    Serial.print( xb4);
     Serial.print( ", ");
-    Serial.print( beaconPacket.yb4);
+    Serial.print( yb4);
     Serial.print( ", ");
     Serial.print( beaconPacket.zb4);
     Serial.print( ", ");
@@ -708,6 +720,13 @@ return sum.w;
 
 void setup()
 {
+  pinMode(ledPinRed, OUTPUT);
+  pinMode(ledPinYellow, OUTPUT);
+  pinMode(ledPinGreen, OUTPUT);
+  digitalWrite(ledPinRed, HIGH);
+  digitalWrite(ledPinYellow, LOW);
+  digitalWrite(ledPinGreen, LOW);
+  Serial3.begin(BTBAUDRATE); // bluetooth baud rate
   Serial.begin(ARBAUDRATE);
   if ( OPMODE & DEBUG) {
     while (!Serial) {;} // wait for serial port to connect.
@@ -726,6 +745,8 @@ void setup()
   packet_received= 0;
 
   if ( OPMODE & DEBUG) { Serial.println( "Setup done."); }//Serial.flush();}
+  digitalWrite(ledPinRed, LOW);
+  digitalWrite(ledPinYellow, HIGH);
 } // end main setup
 
 ///////////////////////////
@@ -737,6 +758,26 @@ void loop() {
   //  use microsecond/time passage check instead
   //  if it's not time for work, then skip hedge loop
   //if ( OPMODE & DEBUG ) { Serial.println( "L+"); Serial.flush();}
+  // Bluetooth section
+  if(Serial3.available() > 0){ // Checks whether data is comming from the serial port
+        state = Serial3.read(); // Reads the data from the serial port
+        Serial.println(state);
+  }
+  if (state == 112) {
+        digitalWrite(ledPinGreen, HIGH);
+        digitalWrite(ledPinYellow, LOW);
+        Serial.println("LED: ON");
+        state = 0;
+        Status = 1;
+  }
+  else if (state == 116) {
+        digitalWrite(ledPinGreen, LOW); // Turn LED OFF
+        digitalWrite(ledPinYellow, HIGH);
+        Serial.println("LED: OFF"); // Send back, to the phone, the String "LED: ON"
+        state = 0;
+        Status = 0;
+  } // end bluetooth section
+  
   microsNow = micros();
   if ((microsNow - microsPrevious) >= microsPerReading) {
     if (firstLoop){
