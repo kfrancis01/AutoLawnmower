@@ -553,10 +553,22 @@ if (Status == 1){
     } else {  // TODO [maybe] insert some conditional to control forward movement
       Forward(moveDist); // TODO make travel distance less than checkpoint tolerance but great enough to avoid choppy movement
   }
-}  
-
   
- 
+
+
+// DEBUG FOR AMBULATE MOVEMENT PROTOCOLS
+//if(microsNow - microsLast) >= 1e5){
+  Serial.println("currentC\t"); Serial.print(currentC);  
+  Serial.println("NumberOfCPs\t"); Serial.print(NumberOfCPs);
+  Serial.println("ta Angle\t"); Serial.print(ta);
+//  Serial.println("Distance to Next CP\t"); Serial.print(mag);
+//  Serial.println("Turn Travel\t"); Serial.print(Travel);
+//  Serial.println("Travel Distance\t"); Serial.print(dist); // Should be equal to moveDist = 15
+  Serial.println("Number Of Rows\t"); Serial.print(numberOfRows);
+//}
+
+} // end Bluetooth Status
+
   //clear buffer and any other data for next read
   clearReadBuffer();
 
