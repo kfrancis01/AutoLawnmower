@@ -942,90 +942,102 @@ void offsetCreate(){ // Create offset positions between beacons for path creatio
   // xb1, yb1, xb2, yb2, xb3, yb3, xb4, yb4 Beacon positions
   // r=offset/sqrt(2)
   // x1 x2 x3 x4 y1 y2 y3 y4  Offset beacon positions
-  long r = offset/sqrt(2);
-  long magOneTwo = sqrt((xb2-xb1)^2+(yb2-yb1)^2); 
-  long magThreeFour = sqrt((xb4-xb3)^2+(yb4-yb3)^2);
-
+  float r = offset/sqrt(2);
+  float magOneTwo = sqrt(pow((xb2-xb1),2)+pow((yb2-yb1),2)); 
+  float magThreeFour = sqrt(pow((xb4-xb3),2)+pow((yb4-yb3),2));
+  
   // Beacon unit vectors
-  float TxOneTwo = (xb2-xb1)/magOneTwo; 
-  float TyOneTwo = (yb2-yb1)/magOneTwo;
-  float TxThreeFour = (xb4-xb3)/magThreeFour; 
-  float TyThreeFour = (yb4-yb3)/magThreeFour;
+  float TxOneTwo = (float)(xb2-xb1)/magOneTwo; 
+  float TyOneTwo = (float)(yb2-yb1)/magOneTwo;
+  float TxThreeFour = (float)(xb4-xb3)/magThreeFour; 
+  float TyThreeFour = (float)(yb4-yb3)/magThreeFour;
+  
 
   // Psuedo 
   
 //  position along 1-2 and 3-4
-  long x1prime = xb1 + r*TxOneTwo;
-  long y1prime = yb1 + r*TyOneTwo;
-  long x2prime = xb2 - r*TxOneTwo;
-  long y2prime = yb2 - r*TyOneTwo; 
-  long x3prime = xb3 + r*TxThreeFour;
-  long y3prime = yb3 + r*TyThreeFour;
-  long x4prime = xb4 - r*TxThreeFour;
-  long y4prime = yb4 - r*TyThreeFour;
+  float x1prime = xb1 + r*TxOneTwo;
+  float y1prime = yb1 + r*TyOneTwo;
+  float x2prime = xb2 - r*TxOneTwo;
+  float y2prime = yb2 - r*TyOneTwo; 
+  float x3prime = xb3 + r*TxThreeFour;
+  float y3prime = yb3 + r*TyThreeFour;
+  float x4prime = xb4 - r*TxThreeFour;
+  float y4prime = yb4 - r*TyThreeFour;
 
-  long magOneFour = sqrt((x4prime - x1prime)^2 + (y4prime - y1prime)^2);
-  long magTwoThree = sqrt((x3prime - x2prime)^2 + (y3prime - y2prime)^2);
-
+  float magOneFour = sqrt(pow((x4prime - x1prime),2) + pow((y4prime - y1prime),2));
+  float magTwoThree = sqrt(pow((x3prime - x2prime),2) + pow((y3prime - y2prime),2));
+  
   // Psuedo Offset Unit Vectors
-  float TxOneFour = (x4prime - x1prime)/magOneFour;
-  float TyOneFour = (y4prime - y1prime)/magOneFour;
-  float TxTwoThree = (x3prime - x2prime)/magTwoThree;
-  float TyTwoThree = (y3prime - y2prime)/magTwoThree;
+  float TxOneFour = (float)(x4prime - x1prime)/magOneFour;
+  float TyOneFour = (float)(y4prime - y1prime)/magOneFour;
+  float TxTwoThree = (float)(x3prime - x2prime)/magTwoThree;
+  float TyTwoThree = (float)(y3prime - y2prime)/magTwoThree;
 
   // Final offset positions along 1prime - 4prime and 2prime - 3prime
-  x1 = x1prime + r*TxOneFour;
-  y1 = y1prime + r*TyOneFour;
-  x4 = x4prime - r*TxOneFour;
-  y4 = y4prime - r*TyOneFour;
-  x2 = x2prime + r*TxTwoThree;
-  y2 = y2prime + r*TyTwoThree;
-  x3 = x3prime - r*TxTwoThree;
-  y3 = y3prime - r*TyTwoThree;
-
+  xoff1 = (x1prime + r*TxOneFour);
+  yoff1 = (y1prime + r*TyOneFour);
+  xoff4 = (x4prime - r*TxOneFour);
+  yoff4 = (y4prime - r*TyOneFour);
+  xoff2 = (x2prime + r*TxTwoThree);
+  yoff2 = (y2prime + r*TyTwoThree);
+  xoff3 = (x3prime - r*TxTwoThree);
+  yoff3 = (y3prime - r*TyTwoThree);
   return;
 }
 
 // TODO call this in setup_hedgehog
 void createEndPoints() {
-  long magOneFour = sqrt((x4-x1)^2+(y4-y1)^2);
-  long magTwoThree = sqrt((x3-x2)^2+(y3-y2)^2);
-  
-  if (magOneFour >= magTwoThree){
-    numberOfRows = ceil(magOneFour/rowOffset);  
+  float magOneFourEnd = sqrt(pow((xoff4-xoff1),2)+pow((yoff4-yoff1),2));
+  float magTwoThreeEnd = sqrt(pow((xoff3-xoff2),2)+pow((yoff3-yoff2),2));
+
+  if (magOneFourEnd >= magTwoThreeEnd){
+    numberOfRows = ceil(magTwoThreeEnd/rowOffset);  
   } else {
-    numberOfRows = ceil(magTwoThree/rowOffset);
+    numberOfRows = ceil(magOneFourEnd/rowOffset);
   }
+
   
   // unit vectors between 1-4 and 2-3
-  float TxOneFour = (x4 - x1)/magOneFour; 
-  float TyOneFour = (y4 - y1)/magOneFour;
-  float TxTwoThree = (x3 - x2)/magTwoThree;
-  float TyTwoThree = (y3 - y2)/magTwoThree;  
+  float TxOneFourEnd = (xoff4 - xoff1)/magOneFourEnd; 
+  float TyOneFourEnd = (yoff4 - yoff1)/magOneFourEnd;
+  float TxTwoThreeEnd = (xoff3 - xoff2)/magTwoThreeEnd;
+  float TyTwoThreeEnd = (yoff3 - yoff2)/magTwoThreeEnd;  
+
 
   //odd number of rows end point on 2-3 vector
   //even number of rows end point on 1-4 vector
   for (int ii=0; ii <= numberOfRows; ii++){
     if (ii==0) {
-      End[ii].x = x2;
-      End[ii].y = y2;
+      End[ii].x = xoff2;
+      End[ii].y = yoff2;  
     } else if (ii == 1){
-      End[ii].x = x1 + rowOffset*TxOneFour; // 2nd endpointx
-      End[ii].y = y1 + rowOffset*TyOneFour; // 2nd endpointy
+      End[ii].x = xoff1 + rowOffset*TxOneFourEnd; // 2nd endpointx
+      End[ii].y = yoff1 + rowOffset*TyOneFourEnd; // 2nd endpointy
     } else if (ii < numberOfRows && ii % 2 == 0){ // for all other even row numbers
-      End[ii].x = End[ii-2].x + 2*rowOffset*TxTwoThree;
-      End[ii].y = End[ii-2].y + 2*rowOffset*TyTwoThree;
+      End[ii].x = End[ii-2].x + 2*rowOffset*TxTwoThreeEnd;
+      End[ii].y = End[ii-2].y + 2*rowOffset*TyTwoThreeEnd;
     } else if (ii < numberOfRows && ii % 2 != 0){ // for all other odd row numbers
-      End[ii].x = End[ii-2].x + 2*rowOffset*TxOneFour;
-      End[ii].y = End[ii-2].y + 2*rowOffset*TyOneFour;
+      End[ii].x = End[ii-2].x + 2*rowOffset*TxOneFourEnd;
+      End[ii].y = End[ii-2].y + 2*rowOffset*TyOneFourEnd;
     } else if (ii >= numberOfRows && (numberOfRows) % 2 == 0){ // Last row end point if # of rows is even
-      End[ii].x = x3; 
-      End[ii].y = y3;
+      End[ii].x = xoff3; 
+      End[ii].y = yoff3;
     } else if (ii >= numberOfRows && (numberOfRows) % 2 != 0){ // Last row end point if # of rows is odd
-      End[ii].x = x4;
-      End[ii].y = y4;
+      End[ii].x = xoff4;
+      End[ii].y = yoff4;
     }// conditional end
+    
+//    Serial.println(" ");
+//    Serial.print("End.x = ");
+//    Serial.print(End[ii].x);
+//    Serial.print(", ");
+//    Serial.print("End.y = ");
+//    Serial.print(End[ii].y);
+    
   } // loop end
+   
+  
   Endx=End[0].x;
   Endy=End[0].y;
   return;
