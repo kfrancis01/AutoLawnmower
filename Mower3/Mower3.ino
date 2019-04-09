@@ -82,14 +82,14 @@ bool firstLoop = 1; // boolean for first time through loop
 long xb1, xb2, xb3,xb4,yb1,yb2,yb3,yb4; //beacon positions
 int ta; // turn angle global variable
 long offset = 1000; //total offset
-long x1,x2,x3,x4,y1,y2,y3,y4; // offset beacon positions
+long xoff1, xoff2, xoff3, xoff4, yoff1, yoff2, yoff3, yoff4; // offset beacon positions
 EndPoint End[20]; // EndPoint array
 // EndPoint[20] = { 0 }; ^^^ Could be used instead of above line
 long rowOffset = 280; // separation between rows (28cm for now)
 long Endx, Endy; //End of row position
 const double Pi = 3.1415926;
 int numberOfRows = 0;
-int NumberOfCPs;
+float NumberOfCPs;
 int moveDist = 15; // distance to move in forward protocol
 unsigned long microsLast = 0;
 // long dist;
@@ -178,7 +178,33 @@ void setup_hedgehog() {
   // AND ADD MOVEMENT AND ADDITIONAL PATH CREATION STEPS IN LOOP_HEDGEHOG
   /////////////////////////////////////////////////////////////////////////
   offsetCreate(); // create beacon offset positions
+//  Serial.println(" ");
+//  Serial.print("X1Offset = ");
+//  Serial.print(xoff1);
+//  Serial.print(", ");
+//  Serial.print("X2Offset = ");
+//  Serial.print(xoff2);
+//  Serial.print(", ");
+//  Serial.print("X3Offset = ");
+//  Serial.print(xoff3);
+//  Serial.print(", ");
+//  Serial.print("X4Offset = ");
+//  Serial.print(xoff4);
+//  Serial.print(", ");
   createEndPoints(); // create row end point array
+//  Serial.println(" ");
+//  Serial.print("X1Offset = ");
+//  Serial.print(xoff1);
+//  Serial.print(", ");
+//  Serial.print("X2Offset = ");
+//  Serial.print(xoff2);
+//  Serial.print(", ");
+//  Serial.print("X3Offset = ");
+//  Serial.print(xoff3);
+//  Serial.print(", ");
+//  Serial.print("X4Offset = ");
+//  Serial.print(xoff4);
+//  Serial.print(", ");
   
   //now the beaconPacket is ready to pass into mower ambulate methods after each HiResPacket!!!
   //ready to use continuous Arduino looping.
@@ -761,6 +787,28 @@ void setup()
   if ( OPMODE & DEBUG) { Serial.println( "Setup done."); }//Serial.flush();}
   digitalWrite(ledPinRed, LOW);
   digitalWrite(ledPinYellow, HIGH);
+  
+  ////////////////////////////////////
+  // Endpoint and Checkpoint print
+  ///////////////////////////////////////
+
+  
+//  Serial.print("EndPoint 1x = ");
+//  Serial.print(End[1].x);
+//  Serial.print(", ");
+//  Serial.print("EndPoint 2 = ");
+//  Serial.print(End[2].x);
+//  Serial.print(", ");
+//  Serial.print("EndPoint 3 = ");
+//  Serial.println(End[3].x);
+//  Serial.print("Checkpoint 1x = ");
+//  Serial.print(CP[1].x);
+//  Serial.print(", ");
+//  Serial.print("Checkpoint 2x = ");
+//  Serial.print(CP[2].x);
+//  Serial.print(", ");
+//  Serial.print("Checkpoint 3x = ");
+//  Serial.print(CP[3].x);
 } // end main setup
 
 ///////////////////////////
@@ -775,19 +823,19 @@ void loop() {
   // Bluetooth section
   if(Serial3.available() > 0){ // Checks whether data is comming from the serial port
         state = Serial3.read(); // Reads the data from the serial port
-        Serial.println(state);
+        // Serial.println(state);
   }
   if (state == 112) {
         digitalWrite(ledPinGreen, HIGH);
         digitalWrite(ledPinYellow, LOW);
-        Serial.println("LED: ON");
+        // Serial.println("LED: ON");
         state = 0;
         Status = 1;
   }
   else if (state == 116) {
         digitalWrite(ledPinGreen, LOW); // Turn LED OFF
         digitalWrite(ledPinYellow, HIGH);
-        Serial.println("LED: OFF"); // Send back, to the phone, the String "LED: ON"
+        // Serial.println("LED: OFF"); // Send back, to the phone, the String "LED: ON"
         state = 0;
         Status = 0;
   } // end bluetooth section
@@ -822,36 +870,56 @@ void loop() {
 // MOVEMENT AND PATH CREATION FUNCTIONS //
 //////////////////////////////////////////
 
-void RowCreate(){ // TODO use unit vectors instead of trig
+void RowCreate(){ 
 // PathCreate Creates a series of checkpoints along the current path that the mower should follow. 
 // The path will be created 
-  // NOTE: Need to Clear CPs array evertime this command is initialized  
-  long RowMag = (sqrt( (Endx-dataPacket.x)^2 + (Endy-dataPacket.y)^2 ));
-  long theta = round(acos((Endx-dataPacket.x)/RowMag)); //Radians
+  double RowMag = (double)sqrt( pow((Endx-dataPacket.x),2) + pow((Endy-dataPacket.y),2));
+  //long theta = round(acos((Endx-dataPacket.x)/RowMag)); //Radians
   NumberOfCPs = ceil(RowMag / separation);   // Number of Checkpoints along the path
   // Need to Round up every time
+//  Serial.print("Number of CheckPoints = ");
+//  Serial.println(NumberOfCPs);
+//  Serial.println(" ");
+  double xUnit = (double)(Endx - dataPacket.x)/RowMag;
+  double yUnit = (double)(Endy - dataPacket.y)/RowMag;
+//  Serial.print("X Unit Vector = "); Serial.println(xUnit);
+//  Serial.print("Y Unit Vector = "); Serial.println(yUnit);
+//  Serial.println(" ");
+//  Serial.print("End Position (X) = "); Serial.println(Endx);
+//  Serial.print("Current Position (X) = "); Serial.println(dataPacket.x);
+//  Serial.println(" ");
+//  Serial.print("End Position (Y) = "); Serial.println(Endy);
+//  Serial.print("Current Position (Y) = "); Serial.println(dataPacket.y);
+  
   
   // RESET CP.x & CP.y to all Zeros
 //  memset(CP.x, 0, sizeof(CP.x));
 //  memset(CP.y, 0, sizeof(CP.y));
  
-  for(int ii=0; ii<=NumberOfCPs; ii++){
+  for(int ii=0; ii+1<=NumberOfCPs; ii++){
 
     // NOTE: May need to update with tolerances later
         
     if(ii == 0){ 
       // first point 
-      CP[ii].x = dataPacket.x + separation*cos(theta);
-      CP[ii].y = dataPacket.y + separation*sin(theta);    
-    } else if(ii >= NumberOfCPs){
+      CP[ii].x = (double) dataPacket.x + separation*xUnit;
+      CP[ii].y = (double) dataPacket.y + separation*yUnit;    
+    } else if(ii+1 >= NumberOfCPs){
       // End Point
       CP[ii].x = Endx;
       CP[ii].y = Endy;
     } else{
        // everything after first point
-      CP[ii].x = CP[ii-1].x + separation*cos(theta);
-      CP[ii].y = CP[ii-1].y + separation*sin(theta);      
-    }       
+      CP[ii].x = (double) CP[ii-1].x + separation*xUnit;
+      CP[ii].y = (double) CP[ii-1].y + separation*yUnit;      
+    }  
+//    Serial.println(" ");
+//    Serial.print("Checkpoint.x = ");
+//    Serial.print(CP[ii].x);
+//    Serial.print(", ");
+//    Serial.print("Checkpoint.y = ");
+//    Serial.print(CP[ii].y);  
+       
   }
   Cpx=CP[0].x;
   Cpy=CP[0].y;
