@@ -775,8 +775,15 @@ void setup()
     Serial.flush();
 
   }
+  // Kangaroo Initialization
   Serial2.begin(KRBAUDRATE);
+  Drive.start();
+  Turn.start();
+  Drive.si(0);
+  Turn.si(0);
+  
   //  and replace references to MMSerial with Serial1 and vice-versa
+  // Marvelmind Initialization
   Serial1.begin(MMBAUDRATE);  //use Serial1 to avoid the SoftwareSerial library
 
   setup_hedgehog(); //MMSerial hedgehog support initialize
