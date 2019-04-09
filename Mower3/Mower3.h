@@ -81,12 +81,12 @@ struct MMBeaconPacket
 
 typedef struct
 {
-  long x;
-  long y;
+  double x;
+  double y;
 } CheckPoint;
 
 typedef struct
 {
-  long x;
-  long y;
+  float x;
+  float y;
 } EndPoint;
