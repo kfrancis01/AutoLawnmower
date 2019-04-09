@@ -40,7 +40,7 @@ unsigned long microsNow= 0;
 const long MMBAUDRATE= 57600; //baudrate for Marvelmind configured to transmit data
 const long BTBAUDRATE= 9600; //Bluetooth baudrate
 const long KRBAUDRATE= 9600;  //kangaroo baudrate
-const unsigned long hhLoopWait= 1000;
+const unsigned long hhLoopWait= 2000;
 const unsigned char hiResPacketSize= 27;  //HiResPacketSize less CRC
 const unsigned char beaconPacketSize= 62;  //BeaconPacketSize less CRC
 const unsigned char HHADDRESS= 5;  //change this if you renumber the beacons/hedge
@@ -77,7 +77,7 @@ CheckPoint CP[50]; // CheckPoint array
 long separation = 2000; // Separation Distance between checkpoints
 long Cpx; // checkpoint X
 long Cpy; // Checkpoint Y
-long tolerance = 50; // 5cm Navigation Tolerance
+long tolerance = 60; // 5cm Navigation Tolerance
 bool firstLoop = 1; // boolean for first time through loop
 long xb1, xb2, xb3,xb4,yb1,yb2,yb3,yb4; //beacon positions
 int ta; // turn angle global variable
