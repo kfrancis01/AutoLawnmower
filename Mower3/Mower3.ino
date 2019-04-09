@@ -584,13 +584,13 @@ if (Status == 1){
 
 // DEBUG FOR AMBULATE MOVEMENT PROTOCOLS
 //if(microsNow - microsLast) >= 1e5){
-  Serial.println("currentC\t"); Serial.print(currentC);  
-  Serial.println("NumberOfCPs\t"); Serial.print(NumberOfCPs);
-  Serial.println("ta Angle\t"); Serial.print(ta);
+//  Serial.print("currentC\t"); Serial.println(currentC);  
+//  Serial.print("NumberOfCPs\t"); Serial.println(NumberOfCPs);
+//  Serial.print("ta Angle\t"); Serial.println(ta);
 //  Serial.println("Distance to Next CP\t"); Serial.print(mag);
 //  Serial.println("Turn Travel\t"); Serial.print(Travel);
 //  Serial.println("Travel Distance\t"); Serial.print(dist); // Should be equal to moveDist = 15
-  Serial.println("Number Of Rows\t"); Serial.print(numberOfRows);
+//  Serial.print("Number Of Rows\t"); Serial.println(numberOfRows);
 //}
 
 } // end Bluetooth Status
@@ -760,6 +760,7 @@ return sum.w;
 
 void setup()
 {
+  // Bluetooth and LED setup
   pinMode(ledPinRed, OUTPUT);
   pinMode(ledPinYellow, OUTPUT);
   pinMode(ledPinGreen, OUTPUT);
@@ -775,7 +776,7 @@ void setup()
     Serial.flush();
 
   }
-  // Kangaroo Initialization
+  // Setup Kangaroo
   Serial2.begin(KRBAUDRATE);
   Drive.start();
   Turn.start();
@@ -783,9 +784,8 @@ void setup()
   Turn.si(0);
   
   //  and replace references to MMSerial with Serial1 and vice-versa
-  // Marvelmind Initialization
   Serial1.begin(MMBAUDRATE);  //use Serial1 to avoid the SoftwareSerial library
-
+  
   setup_hedgehog(); //MMSerial hedgehog support initialize
 
   microsPrevious = 0;
@@ -850,12 +850,13 @@ void loop() {
   microsNow = micros();
   if ((microsNow - microsPrevious) >= microsPerReading) {
     if (firstLoop){
-      loop_hedgehog();
+            loop_hedgehog();
       xOld = dataPacket.x;  // set old x and y position as hedge position after update for first hedge loop
       yOld = dataPacket.y; // 
       firstLoop = 0;
     }
     else{
+//      Serial.print("Status"); Serial.println(Status);
       loop_hedgehog();// MMSerial hedgehog service loop
     }
 
@@ -993,19 +994,23 @@ void checkIncrementCP(){
   // lapnumber = row number of CP matrix
   //Check w/ tolerance to Cpx & Cpy
   
-  long mag = sqrt((Cpx-dataPacket.x)^2+(Cpy-dataPacket.y)^2); // Distance to CP
+  long mag = sqrt(pow((Cpx-dataPacket.x),2)+pow((Cpy-dataPacket.y),2)); // Distance to CP
   if (mag <= tolerance){ //if distance between check point and current pos is less than tolerance do stuff
     //increment to next CP
+//    Serial.print("run chckIncrementCP");
     currentC++;  //increment Checkpoint array index
     Cpx=CP[currentC].x; // Change to next CP x value
     Cpy=CP[currentC].y; // change to next CP y value
   }
+//  Serial.print("mag = ");Serial.println(mag);
+//  Serial.print("Current X Point = "); Serial.println(Cpx);
+//  Serial.print("Current Y Point = "); Serial.println(Cpy);
   return;
 }
 
 void thetaAdjust(){
-  float rActual = sqrt( (dataPacket.x - xOld)^2 + (dataPacket.y - yOld)^2); // distance traveled from last measurement
-  float rDes = sqrt( (Cpx - dataPacket.x)^2 + (Cpy - dataPacket.y)^2); // distance to CP
+  float rActual = sqrt( pow((dataPacket.x - xOld),2) + pow((dataPacket.y - yOld),2)); // distance traveled from last measurement
+  float rDes = sqrt( pow((Cpx - dataPacket.x),2) + pow((Cpy - dataPacket.y),2)); // distance to CP
   float tDes = asin( (Cpy - dataPacket.y)/rDes) * 180/Pi; //desired theta based on position and next Checkpoint in degrees
   float tActual = 180 - asin( (dataPacket.y - yOld)/rActual )*180/Pi; //actual trajectory theta in degrees
   ta = round( tDes - tActual ); //theta to adjust by to point toward Checkpoint
@@ -1022,10 +1027,10 @@ void offsetCreate(){ // Create offset positions between beacons for path creatio
   float magThreeFour = sqrt(pow((xb4-xb3),2)+pow((yb4-yb3),2));
   
   // Beacon unit vectors
-  float TxOneTwo = (float)(xb2-xb1)/magOneTwo; 
-  float TyOneTwo = (float)(yb2-yb1)/magOneTwo;
-  float TxThreeFour = (float)(xb4-xb3)/magThreeFour; 
-  float TyThreeFour = (float)(yb4-yb3)/magThreeFour;
+  double TxOneTwo = (double)(xb2-xb1)/magOneTwo; 
+  double TyOneTwo = (double)(yb2-yb1)/magOneTwo;
+  double TxThreeFour = (double)(xb4-xb3)/magThreeFour; 
+  double TyThreeFour = (double)(yb4-yb3)/magThreeFour;
   
 
   // Psuedo 
@@ -1044,10 +1049,10 @@ void offsetCreate(){ // Create offset positions between beacons for path creatio
   float magTwoThree = sqrt(pow((x3prime - x2prime),2) + pow((y3prime - y2prime),2));
   
   // Psuedo Offset Unit Vectors
-  float TxOneFour = (float)(x4prime - x1prime)/magOneFour;
-  float TyOneFour = (float)(y4prime - y1prime)/magOneFour;
-  float TxTwoThree = (float)(x3prime - x2prime)/magTwoThree;
-  float TyTwoThree = (float)(y3prime - y2prime)/magTwoThree;
+  double TxOneFour = (double)(x4prime - x1prime)/magOneFour;
+  double TyOneFour = (double)(y4prime - y1prime)/magOneFour;
+  double TxTwoThree = (double)(x3prime - x2prime)/magTwoThree;
+  double TyTwoThree = (double)(y3prime - y2prime)/magTwoThree;
 
   // Final offset positions along 1prime - 4prime and 2prime - 3prime
   xoff1 = (x1prime + r*TxOneFour);
@@ -1074,10 +1079,10 @@ void createEndPoints() {
 
   
   // unit vectors between 1-4 and 2-3
-  float TxOneFourEnd = (xoff4 - xoff1)/magOneFourEnd; 
-  float TyOneFourEnd = (yoff4 - yoff1)/magOneFourEnd;
-  float TxTwoThreeEnd = (xoff3 - xoff2)/magTwoThreeEnd;
-  float TyTwoThreeEnd = (yoff3 - yoff2)/magTwoThreeEnd;  
+  double TxOneFourEnd = (double)(xoff4 - xoff1)/magOneFourEnd; 
+  double TyOneFourEnd = (double)(yoff4 - yoff1)/magOneFourEnd;
+  double TxTwoThreeEnd = (double)(xoff3 - xoff2)/magTwoThreeEnd;
+  double TyTwoThreeEnd = (double)(yoff3 - yoff2)/magTwoThreeEnd;  
 
 
   //odd number of rows end point on 2-3 vector
