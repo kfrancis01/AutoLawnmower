@@ -74,14 +74,15 @@ bool beaconRead;
 int currentC = 0; // index for current checkpoint in array
 int LapNumber = 0; // incremental variable
 CheckPoint CP[50]; // CheckPoint array
-long separation = 2000; // Separation Distance between checkpoints
+long separation = 1000; // Separation Distance between checkpoints
 long Cpx; // checkpoint X
 long Cpy; // Checkpoint Y
 long tolerance = 250; // 5cm Navigation Tolerance
+long angleTolerance = 15; // adjustment angle tolerance
 bool firstLoop = 1; // boolean for first time through loop
 long xb1, xb2, xb3,xb4,yb1,yb2,yb3,yb4; //beacon positions
-int ta; // turn angle global variable
-long offset = 1000; //total offset
+long AdjustmentAngle; // turn angle global variable
+long BeaconOffset = 1000; //total offset from beacon positions
 long xoff1, xoff2, xoff3, xoff4, yoff1, yoff2, yoff3, yoff4; // offset beacon positions
 EndPoint End[20]; // EndPoint array
 // EndPoint[20] = { 0 }; ^^^ Could be used instead of above line
@@ -95,7 +96,7 @@ unsigned long microsLast = 0;
 // long dist;
 
 // Movement Variables
-int encoderSpeed = 60; // encoder ticks per second
+int encoderSpeed = 20; // encoder ticks per second
 double TicksPerDegree = 1.56; // Ratio of Ticks to the degrees turned
 double TicksPerCM = 4.85; // pulses per centimeter
 long xOld; // last x position
@@ -557,21 +558,35 @@ if (Status == 1){
   if(currentC == 0){
     RowCreate(); // Create Path for the mower to follow via several checkpoints with equal spacing
     Forward(moveDist); // Move mower forward by small amount
+    microsLast = micros();
   }
 
+/////////////////////
+// Mower not turning
+// TODO check output of checkIncrementCP()
+///////////////////
+
     checkIncrementCP(); // Check if the mower position is near Checkpoint positions
- 
+    Serial.print(" Time since last Theta Check = ");
+    Serial.println(microsNow - microsLast);
   if ((microsNow - microsLast) >= 1e6) { // Calculate thetaAdjust every 10 cycles, or can make this a constant time interval
       thetaAdjust(); // check to see if the moweer needs to adjust on its path, and by how much
+      Serial.print(" Adjustment Angle = ");
+      Serial.println(AdjustmentAngle);
       microsLast = micros();
       xOld = dataPacket.x; // set old x and y position as hedge position before update
       yOld = dataPacket.y;
   } // end thetaAdjust Statement
   
-  if(ta >= tolerance){ 
+  if(AdjustmentAngle >= angleTolerance){ 
     AdjustPos(); // Make Adjustment based on thetaAdjust
-    ta = 0;
+    AdjustmentAngle = 0;
   }  // end Adjustment statement
+
+////////////////
+// Mower not turning
+// TODO Check if CP is being incremented
+////////////////
 
   if (currentC >= NumberOfCPs){ // Conditional telling if current checkpoint is the Endpoint, and we're at it
         turnOneEighty;  
@@ -619,8 +634,8 @@ void printHiResPacket() {
 //     Serial.print( dataPacket.dataBytes, HEX);
 //     Serial.print( ", ");
 
-    Serial.print( dataPacket.timeStamp.v32);
-    Serial.print( ", ");
+//     Serial.print( dataPacket.timeStamp.v32);
+//     Serial.print( ", ");
     Serial.print( "Hedge X = ");
     Serial.print( " ");
     Serial.print( dataPacket.x);
@@ -631,8 +646,8 @@ void printHiResPacket() {
     Serial.print( ", ");
     Serial.print( "Hedge Z = ");
     Serial.print( " ");
-    Serial.print( dataPacket.z);
-    Serial.print( ", ");
+    Serial.println( dataPacket.z);
+//     Serial.print( ", ");
 //     Serial.print( "0x");
 //     Serial.print( dataPacket.flags, HEX);
 //     Serial.print( ", ");
@@ -640,12 +655,11 @@ void printHiResPacket() {
 //     Serial.print( ", ");
 //     Serial.print( dataPacket.hedgeOrientation.w);
 //     Serial.print( ", ");
-    Serial.print( dataPacket.timePassed.w);
+//     Serial.print( dataPacket.timePassed.w);
 //     Serial.print( ", ");
 //     Serial.print( "0x");
 //     Serial.print( dataPacket.CRC_16.w, HEX);
 //     if ( !beaconRead) Serial.print( "   NO BEACON YET.");
-    Serial.print( "\n");
   }
 }
 
@@ -850,7 +864,7 @@ void loop() {
   microsNow = micros();
   if ((microsNow - microsPrevious) >= microsPerReading) {
     if (firstLoop){
-            loop_hedgehog();
+      loop_hedgehog();
       xOld = dataPacket.x;  // set old x and y position as hedge position after update for first hedge loop
       yOld = dataPacket.y; // 
       firstLoop = 0;
@@ -945,23 +959,23 @@ void turnOneEighty(){
   //int dist = 95; //cm
   //double travel = 
 
-  int Travel = round(90 * TicksPerDegree); // Ticks to make a 90 deg turn
-    
+  long TravelTurn = round(90 * TicksPerDegree); // Ticks to make a 90 deg turn
+   
   // Equivalent of If statement
   // Syntax 'ConditionalStatement' ? 'ValueifTrue' : 'ValueifFalse'
-  Travel = LapNumber % 2 == 0 ? Travel : -1 * Travel;
-
+  TravelTurn = LapNumber % 2 == 0 ? TravelTurn : -1 * TravelTurn;
+    Serial.print(" Tick for 90 degree turn = "); Serial.println(TravelTurn);
   // Initiate 90 Deg Turn
-  Turn.pi(Travel,encoderSpeed).wait(); // Initiate Turn
+  Turn.pi(TravelTurn,encoderSpeed/2).wait(); // Initiate Turn
  
 
   // Back up a little
-  Drive.pi(136,encoderSpeed).wait();
+  Drive.pi(136,encoderSpeed/2).wait();
   // May need to add virtual delay later
   // NOTE: Need to find correct backup distance by testing
 
   // Make another 90 Deg Turn
-  Turn.pi(Travel,encoderSpeed).wait(); // Initiate Turn
+  Turn.pi(TravelTurn,encoderSpeed/2).wait(); // Initiate Turn
 
   LapNumber++; // Increment Lap Number everytime a full turn occurs
   Endx = End[LapNumber].x;
@@ -983,9 +997,10 @@ void AdjustPos(){
   //given a theta in degrees
   //turn by desired amount
 
-  int Travel = round(ta * TicksPerDegree);
-  Turn.pi(Travel,encoderSpeed).wait(); // Initiate Turn
-  Forward(moveDist); //start forward protocol after adjustment
+  long TravelAdjust = round(AdjustmentAngle * TicksPerDegree);
+  Serial.print(" Adjustment Ticks = "); Serial.println(TravelAdjust);
+  Turn.pi( TravelAdjust, encoderSpeed/2 ).wait(); // Initiate Turn
+  Forward( moveDist ); //start forward protocol after adjustment
   return;
 }
 
@@ -994,26 +1009,39 @@ void checkIncrementCP(){
   // lapnumber = row number of CP matrix
   //Check w/ tolerance to Cpx & Cpy
   
-  long mag = sqrt(pow((Cpx-dataPacket.x),2)+pow((Cpy-dataPacket.y),2)); // Distance to CP
+  long mag = round(sqrt(pow((Cpx-dataPacket.x),2)+pow((Cpy-dataPacket.y),2))); // Distance to CP
+  Serial.print("Distance between Position and CP = ");Serial.println(mag);
   if (mag <= tolerance){ //if distance between check point and current pos is less than tolerance do stuff
     //increment to next CP
 //    Serial.print("run chckIncrementCP");
     currentC++;  //increment Checkpoint array index
     Cpx=CP[currentC].x; // Change to next CP x value
     Cpy=CP[currentC].y; // change to next CP y value
+    Serial.print("Distance between Position and CP = ");Serial.println(mag);
+    Serial.print("Current X Point = "); Serial.println(Cpx);
+    Serial.print("Current Y Point = "); Serial.println(Cpy);
   }
-//  Serial.print("mag = ");Serial.println(mag);
-//  Serial.print("Current X Point = "); Serial.println(Cpx);
-//  Serial.print("Current Y Point = "); Serial.println(Cpy);
   return;
 }
 
-void thetaAdjust(){
-  float rActual = sqrt( pow((dataPacket.x - xOld),2) + pow((dataPacket.y - yOld),2)); // distance traveled from last measurement
-  float rDes = sqrt( pow((Cpx - dataPacket.x),2) + pow((Cpy - dataPacket.y),2)); // distance to CP
-  float tDes = asin( (Cpy - dataPacket.y)/rDes) * 180/Pi; //desired theta based on position and next Checkpoint in degrees
-  float tActual = 180 - asin( (dataPacket.y - yOld)/rActual )*180/Pi; //actual trajectory theta in degrees
-  ta = round( tDes - tActual ); //theta to adjust by to point toward Checkpoint
+void thetaAdjust(){ // BIG TODO This is wrong
+  double rActual = sqrt( pow((dataPacket.x - xOld),2) + pow((dataPacket.y - yOld),2)); // distance traveled from last measurement
+  double UnitXActual = ((dataPacket.x - xOld))/rActual;
+  double UnitYActual = ((dataPacket.y - yOld))/rActual;
+  double tActual = atan2(UnitYActual, UnitXActual)*180/Pi;
+  
+  double rDes = sqrt( pow((Cpx - dataPacket.x),2) + pow((Cpy - dataPacket.y),2)); // distance to CP
+  double UnitXDes = (Cpx - dataPacket.x)/rDes;
+  double UnitYDes = (Cpy - dataPacket.y)/rDes;
+  double tDes = atan2(UnitYDes, UnitXDes)*180/Pi;
+  
+//  double tDes = asin( (Cpy - dataPacket.y), rDes) * 180/Pi; //desired theta based on position and next Checkpoint in degrees
+//  double tActual = 180 - asin( (dataPacket.y - yOld), rActual )*180/Pi; //actual trajectory theta in degrees
+//  Serial.print("(Adjust) actual distance = ");Serial.println(rActual);
+//  Serial.print("Distance between Position and CP = ");Serial.println(rDes);
+//  Serial.print("Distance between Position and CP = ");Serial.println(tDes);
+//  Serial.print("Distance between Position and CP = ");Serial.println(tActual);
+  AdjustmentAngle = round( tDes - tActual ); //theta to adjust by to point toward Checkpoint
   return; // Angle to adjust by in degrees
 }
 
@@ -1022,7 +1050,7 @@ void offsetCreate(){ // Create offset positions between beacons for path creatio
   // xb1, yb1, xb2, yb2, xb3, yb3, xb4, yb4 Beacon positions
   // r=offset/sqrt(2)
   // x1 x2 x3 x4 y1 y2 y3 y4  Offset beacon positions
-  float r = offset/sqrt(2);
+  float rdist = round(BeaconOffset/sqrt(2));
   float magOneTwo = sqrt(pow((xb2-xb1),2)+pow((yb2-yb1),2)); 
   float magThreeFour = sqrt(pow((xb4-xb3),2)+pow((yb4-yb3),2));
   
@@ -1036,14 +1064,14 @@ void offsetCreate(){ // Create offset positions between beacons for path creatio
   // Psuedo 
   
 //  position along 1-2 and 3-4
-  float x1prime = xb1 + r*TxOneTwo;
-  float y1prime = yb1 + r*TyOneTwo;
-  float x2prime = xb2 - r*TxOneTwo;
-  float y2prime = yb2 - r*TyOneTwo; 
-  float x3prime = xb3 + r*TxThreeFour;
-  float y3prime = yb3 + r*TyThreeFour;
-  float x4prime = xb4 - r*TxThreeFour;
-  float y4prime = yb4 - r*TyThreeFour;
+  float x1prime = xb1 + rdist*TxOneTwo;
+  float y1prime = yb1 + rdist*TyOneTwo;
+  float x2prime = xb2 - rdist*TxOneTwo;
+  float y2prime = yb2 - rdist*TyOneTwo; 
+  float x3prime = xb3 + rdist*TxThreeFour;
+  float y3prime = yb3 + rdist*TyThreeFour;
+  float x4prime = xb4 - rdist*TxThreeFour;
+  float y4prime = yb4 - rdist*TyThreeFour;
 
   float magOneFour = sqrt(pow((x4prime - x1prime),2) + pow((y4prime - y1prime),2));
   float magTwoThree = sqrt(pow((x3prime - x2prime),2) + pow((y3prime - y2prime),2));
@@ -1055,14 +1083,14 @@ void offsetCreate(){ // Create offset positions between beacons for path creatio
   double TyTwoThree = (double)(y3prime - y2prime)/magTwoThree;
 
   // Final offset positions along 1prime - 4prime and 2prime - 3prime
-  xoff1 = (x1prime + r*TxOneFour);
-  yoff1 = (y1prime + r*TyOneFour);
-  xoff4 = (x4prime - r*TxOneFour);
-  yoff4 = (y4prime - r*TyOneFour);
-  xoff2 = (x2prime + r*TxTwoThree);
-  yoff2 = (y2prime + r*TyTwoThree);
-  xoff3 = (x3prime - r*TxTwoThree);
-  yoff3 = (y3prime - r*TyTwoThree);
+  xoff1 = (x1prime + rdist*TxOneFour);
+  yoff1 = (y1prime + rdist*TyOneFour);
+  xoff4 = (x4prime - rdist*TxOneFour);
+  yoff4 = (y4prime - rdist*TyOneFour);
+  xoff2 = (x2prime + rdist*TxTwoThree);
+  yoff2 = (y2prime + rdist*TyTwoThree);
+  xoff3 = (x3prime - rdist*TxTwoThree);
+  yoff3 = (y3prime - rdist*TyTwoThree);
   return;
 }
 
