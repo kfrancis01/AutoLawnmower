@@ -40,7 +40,7 @@ unsigned long microsNow= 0;
 const long MMBAUDRATE= 57600; //baudrate for Marvelmind configured to transmit data
 const long BTBAUDRATE= 9600; //Bluetooth baudrate
 const long KRBAUDRATE= 9600;  //kangaroo baudrate
-const unsigned long hhLoopWait= 2000;
+const unsigned long hhLoopWait= 1000;
 const unsigned char hiResPacketSize= 27;  //HiResPacketSize less CRC
 const unsigned char beaconPacketSize= 62;  //BeaconPacketSize less CRC
 const unsigned char HHADDRESS= 5;  //change this if you renumber the beacons/hedge
@@ -74,17 +74,17 @@ bool beaconRead;
 int currentC = 0; // index for current checkpoint in array
 int LapNumber = 0; // incremental variable
 CheckPoint CP[50]; // CheckPoint array
-long separation = 1000; // Separation Distance between checkpoints
+long separation = 2000; // Separation Distance between checkpoints
 long Cpx; // checkpoint X
 long Cpy; // Checkpoint Y
 long tolerance = 250; // 5cm Navigation Tolerance
 long angleTolerance = 15; // adjustment angle tolerance
 bool firstLoop = 1; // boolean for first time through loop
 long xb1, xb2, xb3,xb4,yb1,yb2,yb3,yb4; //beacon positions
-long AdjustmentAngle; // turn angle global variable
-long BeaconOffset = 1000; //total offset from beacon positions
+int ta; // turn angle global variable
+long offset = 1000; //total offset from beacon positions
 long xoff1, xoff2, xoff3, xoff4, yoff1, yoff2, yoff3, yoff4; // offset beacon positions
-EndPoint End[20]; // EndPoint array
+EndPoint End[50]; // EndPoint array
 // EndPoint[20] = { 0 }; ^^^ Could be used instead of above line
 long rowOffset = 280; // separation between rows (28cm for now)
 long Endx, Endy; //End of row position
@@ -96,7 +96,7 @@ unsigned long microsLast = 0;
 // long dist;
 
 // Movement Variables
-int encoderSpeed = 20; // encoder ticks per second
+int encoderSpeed = 60; // encoder ticks per second
 double TicksPerDegree = 1.56; // Ratio of Ticks to the degrees turned
 double TicksPerCM = 4.85; // pulses per centimeter
 long xOld; // last x position
@@ -567,20 +567,17 @@ if (Status == 1){
 ///////////////////
 
     checkIncrementCP(); // Check if the mower position is near Checkpoint positions
-    Serial.print(" Time since last Theta Check = ");
-    Serial.println(microsNow - microsLast);
+
   if ((microsNow - microsLast) >= 1e6) { // Calculate thetaAdjust every 10 cycles, or can make this a constant time interval
       thetaAdjust(); // check to see if the moweer needs to adjust on its path, and by how much
-      Serial.print(" Adjustment Angle = ");
-      Serial.println(AdjustmentAngle);
       microsLast = micros();
       xOld = dataPacket.x; // set old x and y position as hedge position before update
       yOld = dataPacket.y;
   } // end thetaAdjust Statement
   
-  if(AdjustmentAngle >= angleTolerance){ 
+  if(ta >= angleTolerance){ 
     AdjustPos(); // Make Adjustment based on thetaAdjust
-    AdjustmentAngle = 0;
+    ta = 0;
   }  // end Adjustment statement
 
 ////////////////
@@ -592,7 +589,7 @@ if (Status == 1){
         turnOneEighty;  
         currentC = 0; // Reinitialize the Checkpoints
     } else {  // TODO [maybe] insert some conditional to control forward movement
-      Forward(moveDist); // TODO make travel distance less than checkpoint tolerance but great enough to avoid choppy movement
+        Forward(moveDist); // TODO make travel distance less than checkpoint tolerance but great enough to avoid choppy movement
   }
   
 
@@ -660,6 +657,7 @@ void printHiResPacket() {
 //     Serial.print( "0x");
 //     Serial.print( dataPacket.CRC_16.w, HEX);
 //     if ( !beaconRead) Serial.print( "   NO BEACON YET.");
+//    Serial.print( "/n");
   }
 }
 
@@ -768,9 +766,9 @@ return sum.w;
 //  END OF MARVELMIND HEDGEHOG RELATED PART //
 //////////////////////////////////////////////
 
-////////////////////////////
-// DO NOT EDIT MAIN SETUP //
-////////////////////////////
+///////////////////////////////
+// Minimize main setup edits //
+///////////////////////////////
 
 void setup()
 {
@@ -790,7 +788,11 @@ void setup()
     Serial.flush();
 
   }
+  ////////////////////////
   // Setup Kangaroo
+  // COMMENT OUT FOR NON MOTOR TESTING
+  ////////////////////////
+  
   Serial2.begin(KRBAUDRATE);
   Drive.start();
   Turn.start();
@@ -895,7 +897,7 @@ void loop() {
 void RowCreate(){ 
 // PathCreate Creates a series of checkpoints along the current path that the mower should follow. 
 // The path will be created 
-  double RowMag = (double)sqrt( pow((Endx-dataPacket.x),2) + pow((Endy-dataPacket.y),2));
+  double RowMag = sqrt( pow((Endx-dataPacket.x),2) + pow((Endy-dataPacket.y),2));
   //long theta = round(acos((Endx-dataPacket.x)/RowMag)); //Radians
   NumberOfCPs = ceil(RowMag / separation);   // Number of Checkpoints along the path
   // Need to Round up every time
@@ -914,9 +916,6 @@ void RowCreate(){
 //  Serial.print("Current Position (Y) = "); Serial.println(dataPacket.y);
   
   
-  // RESET CP.x & CP.y to all Zeros
-//  memset(CP.x, 0, sizeof(CP.x));
-//  memset(CP.y, 0, sizeof(CP.y));
  
   for(int ii=0; ii+1<=NumberOfCPs; ii++){
 
@@ -953,29 +952,23 @@ void RowCreate(){
 void turnOneEighty(){
   // Turning function for mower at end of each lap
 
-  // This section may not be needed later
-  //double ratio = 60; // Ticks / cycle
-  //double diameter = 31.75; // cm
-  //int dist = 95; //cm
-  //double travel = 
-
-  long TravelTurn = round(90 * TicksPerDegree); // Ticks to make a 90 deg turn
+  long Travel = round(90 * TicksPerDegree); // Ticks to make a 90 deg turn
    
   // Equivalent of If statement
   // Syntax 'ConditionalStatement' ? 'ValueifTrue' : 'ValueifFalse'
-  TravelTurn = LapNumber % 2 == 0 ? TravelTurn : -1 * TravelTurn;
-    Serial.print(" Tick for 90 degree turn = "); Serial.println(TravelTurn);
+  Travel = LapNumber % 2 == 0 ? Travel : -1 * Travel;
+    Serial.print(" Tick for 90 degree turn = "); Serial.println(Travel);
   // Initiate 90 Deg Turn
-  Turn.pi(TravelTurn,encoderSpeed/2).wait(); // Initiate Turn
+  Turn.pi(Travel,encoderSpeed).wait(); // Initiate Turn
  
 
   // Back up a little
-  Drive.pi(136,encoderSpeed/2).wait();
+  Drive.pi(136,encoderSpeed).wait();
   // May need to add virtual delay later
   // NOTE: Need to find correct backup distance by testing
 
   // Make another 90 Deg Turn
-  Turn.pi(TravelTurn,encoderSpeed/2).wait(); // Initiate Turn
+  Turn.pi(Travel,encoderSpeed).wait(); // Initiate Turn
 
   LapNumber++; // Increment Lap Number everytime a full turn occurs
   Endx = End[LapNumber].x;
@@ -997,9 +990,8 @@ void AdjustPos(){
   //given a theta in degrees
   //turn by desired amount
 
-  long TravelAdjust = round(AdjustmentAngle * TicksPerDegree);
-  Serial.print(" Adjustment Ticks = "); Serial.println(TravelAdjust);
-  Turn.pi( TravelAdjust, encoderSpeed/2 ).wait(); // Initiate Turn
+  long Travel = round(ta * TicksPerDegree);
+  Turn.pi( Travel, encoderSpeed).wait(); // Initiate Turn
   Forward( moveDist ); //start forward protocol after adjustment
   return;
 }
@@ -1010,16 +1002,15 @@ void checkIncrementCP(){
   //Check w/ tolerance to Cpx & Cpy
   
   long mag = round(sqrt(pow((Cpx-dataPacket.x),2)+pow((Cpy-dataPacket.y),2))); // Distance to CP
-  Serial.print("Distance between Position and CP = ");Serial.println(mag);
   if (mag <= tolerance){ //if distance between check point and current pos is less than tolerance do stuff
     //increment to next CP
-//    Serial.print("run chckIncrementCP");
     currentC++;  //increment Checkpoint array index
     Cpx=CP[currentC].x; // Change to next CP x value
     Cpy=CP[currentC].y; // change to next CP y value
-    Serial.print("Distance between Position and CP = ");Serial.println(mag);
-    Serial.print("Current X Point = "); Serial.println(Cpx);
-    Serial.print("Current Y Point = "); Serial.println(Cpy);
+    
+//    Serial.print("Distance between Position and CP = ");Serial.println(mag);
+//    Serial.print("Current X Point = "); Serial.println(Cpx);
+//    Serial.print("Current Y Point = "); Serial.println(Cpy);
   }
   return;
 }
@@ -1041,7 +1032,7 @@ void thetaAdjust(){ // BIG TODO This is wrong
 //  Serial.print("Distance between Position and CP = ");Serial.println(rDes);
 //  Serial.print("Distance between Position and CP = ");Serial.println(tDes);
 //  Serial.print("Distance between Position and CP = ");Serial.println(tActual);
-  AdjustmentAngle = round( tDes - tActual ); //theta to adjust by to point toward Checkpoint
+  ta = round( tDes - tActual ); //theta to adjust by to point toward Checkpoint
   return; // Angle to adjust by in degrees
 }
 
@@ -1050,7 +1041,7 @@ void offsetCreate(){ // Create offset positions between beacons for path creatio
   // xb1, yb1, xb2, yb2, xb3, yb3, xb4, yb4 Beacon positions
   // r=offset/sqrt(2)
   // x1 x2 x3 x4 y1 y2 y3 y4  Offset beacon positions
-  float rdist = round(BeaconOffset/sqrt(2));
+  float r = offset/sqrt(2);
   float magOneTwo = sqrt(pow((xb2-xb1),2)+pow((yb2-yb1),2)); 
   float magThreeFour = sqrt(pow((xb4-xb3),2)+pow((yb4-yb3),2));
   
@@ -1064,14 +1055,14 @@ void offsetCreate(){ // Create offset positions between beacons for path creatio
   // Psuedo 
   
 //  position along 1-2 and 3-4
-  float x1prime = xb1 + rdist*TxOneTwo;
-  float y1prime = yb1 + rdist*TyOneTwo;
-  float x2prime = xb2 - rdist*TxOneTwo;
-  float y2prime = yb2 - rdist*TyOneTwo; 
-  float x3prime = xb3 + rdist*TxThreeFour;
-  float y3prime = yb3 + rdist*TyThreeFour;
-  float x4prime = xb4 - rdist*TxThreeFour;
-  float y4prime = yb4 - rdist*TyThreeFour;
+  float x1prime = xb1 + r*TxOneTwo;
+  float y1prime = yb1 + r*TyOneTwo;
+  float x2prime = xb2 - r*TxOneTwo;
+  float y2prime = yb2 - r*TyOneTwo; 
+  float x3prime = xb3 + r*TxThreeFour;
+  float y3prime = yb3 + r*TyThreeFour;
+  float x4prime = xb4 - r*TxThreeFour;
+  float y4prime = yb4 - r*TyThreeFour;
 
   float magOneFour = sqrt(pow((x4prime - x1prime),2) + pow((y4prime - y1prime),2));
   float magTwoThree = sqrt(pow((x3prime - x2prime),2) + pow((y3prime - y2prime),2));
@@ -1083,14 +1074,14 @@ void offsetCreate(){ // Create offset positions between beacons for path creatio
   double TyTwoThree = (double)(y3prime - y2prime)/magTwoThree;
 
   // Final offset positions along 1prime - 4prime and 2prime - 3prime
-  xoff1 = (x1prime + rdist*TxOneFour);
-  yoff1 = (y1prime + rdist*TyOneFour);
-  xoff4 = (x4prime - rdist*TxOneFour);
-  yoff4 = (y4prime - rdist*TyOneFour);
-  xoff2 = (x2prime + rdist*TxTwoThree);
-  yoff2 = (y2prime + rdist*TyTwoThree);
-  xoff3 = (x3prime - rdist*TxTwoThree);
-  yoff3 = (y3prime - rdist*TyTwoThree);
+  xoff1 = (x1prime + r*TxOneFour);
+  yoff1 = (y1prime + r*TyOneFour);
+  xoff4 = (x4prime - r*TxOneFour);
+  yoff4 = (y4prime - r*TyOneFour);
+  xoff2 = (x2prime + r*TxTwoThree);
+  yoff2 = (y2prime + r*TyTwoThree);
+  xoff3 = (x3prime - r*TxTwoThree);
+  yoff3 = (y3prime - r*TyTwoThree);
   return;
 }
 
