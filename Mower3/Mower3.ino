@@ -3,11 +3,15 @@
 #include "Mower3.h"
 #include <Kangaroo.h>
 //global constants, these do not change during a given execution
-
+#define ledPinRed 13
+#define ledPinYellow 12
+#define ledPinGreen 11
+int state = 0;
+int Status = 0;
 //operating mode values (OPMODE) can be combined as bits and tested during execution separately
 //   and set at compile time and never modified during execution.
 //   if printing anything TESTING must be set to setup the Serial0 port
-const int DEBUG = 0;       //set to 0 for production, 1 will give Serial monitor info
+const int DEBUG = 1;       //set to 0 for production, 1 will give Serial monitor info
 //OPMODE uses compile time math to set OPMODE flags.
 //const int OPMODE2= 2;     //OPMODES are set using bits, powers of 2,
 //    use this and/or next one for other reasons
@@ -15,7 +19,7 @@ const int DEBUG = 0;       //set to 0 for production, 1 will give Serial monitor
 const int OPMODE=DEBUG;  //should likely be all 0's for full up production use.
 
 const long ARBAUDRATE= 57600;
-const unsigned long microsPerReading= 1000;  //number of microseconds between work efforts
+const unsigned long microsPerReading= 100;  //number of microseconds between work efforts
 //as measured within loop()
 
 //global variables available everywhere to everything
@@ -34,6 +38,7 @@ unsigned long microsNow= 0;
 
 //SoftwareSerial MMSerial(19, 18); //Input(RX),Output(TX): only needed for UNO
 const long MMBAUDRATE= 57600; //baudrate for Marvelmind configured to transmit data
+const long BTBAUDRATE= 9600; //Bluetooth baudrate
 const long KRBAUDRATE= 9600;  //kangaroo baudrate
 const unsigned long hhLoopWait= 1000;
 const unsigned char hiResPacketSize= 27;  //HiResPacketSize less CRC
@@ -72,19 +77,20 @@ CheckPoint CP[50]; // CheckPoint array
 long separation = 2000; // Separation Distance between checkpoints
 long Cpx; // checkpoint X
 long Cpy; // Checkpoint Y
-long tolerance = 50; // 5cm Navigation Tolerance
+long tolerance = 250; // 5cm Navigation Tolerance
+long angleTolerance = 15; // adjustment angle tolerance
 bool firstLoop = 1; // boolean for first time through loop
 long xb1, xb2, xb3,xb4,yb1,yb2,yb3,yb4; //beacon positions
 int ta; // turn angle global variable
-long offset = 1000; //total offset
-long x1,x2,x3,x4,y1,y2,y3,y4; // offset beacon positions
-EndPoint End[20]; // EndPoint array
+long offset = 1000; //total offset from beacon positions
+long xoff1, xoff2, xoff3, xoff4, yoff1, yoff2, yoff3, yoff4; // offset beacon positions
+EndPoint End[50]; // EndPoint array
 // EndPoint[20] = { 0 }; ^^^ Could be used instead of above line
 long rowOffset = 280; // separation between rows (28cm for now)
 long Endx, Endy; //End of row position
 const double Pi = 3.1415926;
 int numberOfRows = 0;
-int NumberOfCPs;
+float NumberOfCPs;
 int moveDist = 15; // distance to move in forward protocol
 unsigned long microsLast = 0;
 // long dist;
@@ -149,29 +155,7 @@ void setup_hedgehog() {
     //delay(1);  //just wait a bit and look again
   }
 
-  // Since beacon# is based on order in which they come in
-  // redefines x# and y# based on actual beacon address
-  if (beaconPacket.beacon1==1){xb1=beaconPacket.xb1; yb1=beaconPacket.yb1;}
-  else if (beaconPacket.beacon1==2){xb2=beaconPacket.xb1; yb2=beaconPacket.yb1;}
-  else if (beaconPacket.beacon1==3){xb3=beaconPacket.xb1; yb3=beaconPacket.yb1;}
-  else if (beaconPacket.beacon1==4){xb4=beaconPacket.xb1; yb4=beaconPacket.yb1;}
 
-  if (beaconPacket.beacon2==1){xb1=beaconPacket.xb2; yb1=beaconPacket.yb2;}
-  else if (beaconPacket.beacon2==2){xb2=beaconPacket.xb2; yb2=beaconPacket.yb2;}
-  else if (beaconPacket.beacon2==3){xb3=beaconPacket.xb2; yb3=beaconPacket.yb2;}
-  else if (beaconPacket.beacon2==4){xb4=beaconPacket.xb2; yb4=beaconPacket.yb2;}
-
-  if (beaconPacket.beacon3==1){xb1=beaconPacket.xb3; yb1=beaconPacket.yb3;}
-  else if (beaconPacket.beacon3==2){xb2=beaconPacket.xb3; yb2=beaconPacket.yb3;}
-  else if (beaconPacket.beacon3==3){xb3=beaconPacket.xb3; yb3=beaconPacket.yb3;}
-  else if (beaconPacket.beacon3==4){xb4=beaconPacket.xb3; yb4=beaconPacket.yb3;}
-
-  if (beaconPacket.beacon4==1){xb1=beaconPacket.xb4; yb1=beaconPacket.yb4;}
-  else if (beaconPacket.beacon4==2){xb2=beaconPacket.xb4; yb2=beaconPacket.yb4;}
-  else if (beaconPacket.beacon4==3){xb3=beaconPacket.xb4; yb3=beaconPacket.yb4;}
-  else if (beaconPacket.beacon4==4){xb4=beaconPacket.xb4; yb4=beaconPacket.yb4;}
-  //end of redefined beacon positions
-  
   //check the Beacon CRC
   unsigned int tmp= hedgehog_set_crc16( &(beaconPacket.destAddr), beaconPacketSize);
 
@@ -195,7 +179,33 @@ void setup_hedgehog() {
   // AND ADD MOVEMENT AND ADDITIONAL PATH CREATION STEPS IN LOOP_HEDGEHOG
   /////////////////////////////////////////////////////////////////////////
   offsetCreate(); // create beacon offset positions
+//  Serial.println(" ");
+//  Serial.print("X1Offset = ");
+//  Serial.print(xoff1);
+//  Serial.print(", ");
+//  Serial.print("X2Offset = ");
+//  Serial.print(xoff2);
+//  Serial.print(", ");
+//  Serial.print("X3Offset = ");
+//  Serial.print(xoff3);
+//  Serial.print(", ");
+//  Serial.print("X4Offset = ");
+//  Serial.print(xoff4);
+//  Serial.print(", ");
   createEndPoints(); // create row end point array
+//  Serial.println(" ");
+//  Serial.print("X1Offset = ");
+//  Serial.print(xoff1);
+//  Serial.print(", ");
+//  Serial.print("X2Offset = ");
+//  Serial.print(xoff2);
+//  Serial.print(", ");
+//  Serial.print("X3Offset = ");
+//  Serial.print(xoff3);
+//  Serial.print(", ");
+//  Serial.print("X4Offset = ");
+//  Serial.print(xoff4);
+//  Serial.print(", ");
   
   //now the beaconPacket is ready to pass into mower ambulate methods after each HiResPacket!!!
   //ready to use continuous Arduino looping.
@@ -431,6 +441,28 @@ void find_beacon() {
   //transfer packet into Packet structures
   if ( beaconType) {
     transferBeaconPacket( &(hedgehog_serial_buf[bufndx]));
+    // Since beacon# is based on order in which they come in
+    // redefines x# and y# based on actual beacon address
+    if (beaconPacket.beacon1==1){xb1=beaconPacket.xb1; yb1=beaconPacket.yb1;}
+    else if (beaconPacket.beacon1==2){xb2=beaconPacket.xb1; yb2=beaconPacket.yb1;}
+    else if (beaconPacket.beacon1==3){xb3=beaconPacket.xb1; yb3=beaconPacket.yb1;}
+    else if (beaconPacket.beacon1==4){xb4=beaconPacket.xb1; yb4=beaconPacket.yb1;}
+
+    if (beaconPacket.beacon2==1){xb1=beaconPacket.xb2; yb1=beaconPacket.yb2;}
+    else if (beaconPacket.beacon2==2){xb2=beaconPacket.xb2; yb2=beaconPacket.yb2;}
+    else if (beaconPacket.beacon2==3){xb3=beaconPacket.xb2; yb3=beaconPacket.yb2;}
+    else if (beaconPacket.beacon2==4){xb4=beaconPacket.xb2; yb4=beaconPacket.yb2;}
+
+    if (beaconPacket.beacon3==1){xb1=beaconPacket.xb3; yb1=beaconPacket.yb3;}
+    else if (beaconPacket.beacon3==2){xb2=beaconPacket.xb3; yb2=beaconPacket.yb3;}
+    else if (beaconPacket.beacon3==3){xb3=beaconPacket.xb3; yb3=beaconPacket.yb3;}
+    else if (beaconPacket.beacon3==4){xb4=beaconPacket.xb3; yb4=beaconPacket.yb3;}
+
+    if (beaconPacket.beacon4==1){xb1=beaconPacket.xb4; yb1=beaconPacket.yb4;}
+    else if (beaconPacket.beacon4==2){xb2=beaconPacket.xb4; yb2=beaconPacket.yb4;}
+    else if (beaconPacket.beacon4==3){xb3=beaconPacket.xb4; yb3=beaconPacket.yb4;}
+    else if (beaconPacket.beacon4==4){xb4=beaconPacket.xb4; yb4=beaconPacket.yb4;}
+    //end of redefined beacon positions
     if ( OPMODE & DEBUG) {
       printBeaconPacket();
     }
@@ -521,34 +553,60 @@ void loop_hedgehog() {
   //establish some reasonable bracketing limits within which there will be no
   //movement commands and beyond which there will be.
   //This may have to be trial and error.
-  
-if(currentC == 0){
-  RowCreate(); // Create Path for the mower to follow via several checkpoints with equal spacing
-  Forward(moveDist); // Move mower forward by small amount
-}
 
-  checkIncrementCP(); // Check if the mower position is near Checkpoint positions
- 
-if ((microsNow - microsLast) >= 10*microsPerReading) { // Calculate thetaAdjust every 10 cycles, or can make this a constant time interval
-    thetaAdjust(); // check to see if the moweer needs to adjust on its path, and by how much
+if (Status == 1){
+  if(currentC == 0){
+    RowCreate(); // Create Path for the mower to follow via several checkpoints with equal spacing
+    Forward(moveDist); // Move mower forward by small amount
     microsLast = micros();
-} // end thetaAdjust Statement
-  
-if(ta >= tolerance){ 
-  AdjustPos(); // Make Adjustment based on thetaAdjust
-  ta = 0;
-}  // end Adjustment statement
+  }
 
- if (currentC >= NumberOfCPs){ // Conditional telling if current checkpoint is the Endpoint, and we're at it
-      turnOneEighty;  
-      currentC = 0; // Reinitialize the Checkpoints
-  } else {  // TODO [maybe] insert some conditional to control forward movement
-    Forward(moveDist); // TODO make travel distance less than checkpoint tolerance but great enough to avoid choppy movement
-}
+/////////////////////
+// Mower not turning
+// TODO check output of checkIncrementCP()
+///////////////////
+
+    checkIncrementCP(); // Check if the mower position is near Checkpoint positions
+
+  if ((microsNow - microsLast) >= 1e6) { // Calculate thetaAdjust every 10 cycles, or can make this a constant time interval
+      thetaAdjust(); // check to see if the moweer needs to adjust on its path, and by how much
+      microsLast = micros();
+      xOld = dataPacket.x; // set old x and y position as hedge position before update
+      yOld = dataPacket.y;
+  } // end thetaAdjust Statement
+  
+  if(ta >= angleTolerance){ 
+    AdjustPos(); // Make Adjustment based on thetaAdjust
+    ta = 0;
+  }  // end Adjustment statement
+
+////////////////
+// Mower not turning
+// TODO Check if CP is being incremented
+////////////////
+
+  if (currentC >= NumberOfCPs){ // Conditional telling if current checkpoint is the Endpoint, and we're at it
+        turnOneEighty;  
+        currentC = 0; // Reinitialize the Checkpoints
+    } else {  // TODO [maybe] insert some conditional to control forward movement
+        Forward(moveDist); // TODO make travel distance less than checkpoint tolerance but great enough to avoid choppy movement
+  }
   
 
-  
- 
+
+// DEBUG FOR AMBULATE MOVEMENT PROTOCOLS
+//if(microsNow - microsLast) >= 1e5){
+//  Serial.print("currentC\t"); Serial.println(currentC);  
+//  Serial.print("NumberOfCPs\t"); Serial.println(NumberOfCPs);
+//  Serial.print("ta Angle\t"); Serial.println(ta);
+//  Serial.println("Distance to Next CP\t"); Serial.print(mag);
+//  Serial.println("Turn Travel\t"); Serial.print(Travel);
+//  Serial.println("Travel Distance\t"); Serial.print(dist); // Should be equal to moveDist = 15
+//  Serial.print("Number Of Rows\t"); Serial.println(numberOfRows);
+//}
+
+} // end Bluetooth Status
+
   //clear buffer and any other data for next read
   clearReadBuffer();
 
@@ -560,40 +618,46 @@ if(ta >= tolerance){
 void printHiResPacket() {
   if( OPMODE & DEBUG) {
     //header is mostly common between packet types
-    Serial.print( "0x");
-    Serial.print( dataPacket.destAddr, HEX);
-    Serial.print( ", ");
-    Serial.print( "0x");
-    Serial.print( dataPacket.packetType, HEX);
-    Serial.print( ", ");
-    Serial.print( "0x");
-    Serial.print( dataPacket.dataCode.w, HEX);
-    Serial.print( ", ");
-    Serial.print( "0x");
-    Serial.print( dataPacket.dataBytes, HEX);
-    Serial.print( ", ");
+//     Serial.print( "0x");
+//     Serial.print( dataPacket.destAddr, HEX);
+//     Serial.print( ", ");
+//     Serial.print( "0x");
+//     Serial.print( dataPacket.packetType, HEX);
+//     Serial.print( ", ");
+//     Serial.print( "0x");
+//     Serial.print( dataPacket.dataCode.w, HEX);
+//     Serial.print( ", ");
+//     Serial.print( "0x");
+//     Serial.print( dataPacket.dataBytes, HEX);
+//     Serial.print( ", ");
 
-    Serial.print( dataPacket.timeStamp.v32);
-    Serial.print( ", ");
+//     Serial.print( dataPacket.timeStamp.v32);
+//     Serial.print( ", ");
+    Serial.print( "Hedge X = ");
+    Serial.print( " ");
     Serial.print( dataPacket.x);
     Serial.print( ", ");
+    Serial.print( "Hedge Y = ");
+    Serial.print( " ");
     Serial.print( dataPacket.y);
     Serial.print( ", ");
-    Serial.print( dataPacket.z);
-    Serial.print( ", ");
-    Serial.print( "0x");
-    Serial.print( dataPacket.flags, HEX);
-    Serial.print( ", ");
-    Serial.print( dataPacket.hedgeAddr);
-    Serial.print( ", ");
-    Serial.print( dataPacket.hedgeOrientation.w);
-    Serial.print( ", ");
-    Serial.print( dataPacket.timePassed.w);
-    Serial.print( ", ");
-    Serial.print( "0x");
-    Serial.print( dataPacket.CRC_16.w, HEX);
-    if ( !beaconRead) Serial.print( "   NO BEACON YET.");
-    Serial.print( "\n");
+    Serial.print( "Hedge Z = ");
+    Serial.print( " ");
+    Serial.println( dataPacket.z);
+//     Serial.print( ", ");
+//     Serial.print( "0x");
+//     Serial.print( dataPacket.flags, HEX);
+//     Serial.print( ", ");
+//     Serial.print( dataPacket.hedgeAddr);
+//     Serial.print( ", ");
+//     Serial.print( dataPacket.hedgeOrientation.w);
+//     Serial.print( ", ");
+//     Serial.print( dataPacket.timePassed.w);
+//     Serial.print( ", ");
+//     Serial.print( "0x");
+//     Serial.print( dataPacket.CRC_16.w, HEX);
+//     if ( !beaconRead) Serial.print( "   NO BEACON YET.");
+//    Serial.print( "/n");
   }
 }
 
@@ -619,44 +683,44 @@ void printBeaconPacket() {
     //unique part
     Serial.print( beaconPacket.numBeacons);
     Serial.print( ", ");
-    Serial.print( beaconPacket.beacon1);
+    Serial.print( "beacon1: ");
+    Serial.print( " ");
+    Serial.print( xb1);
     Serial.print( ", ");
-    Serial.print( beaconPacket.xb1);
-    Serial.print( ", ");
-    Serial.print( beaconPacket.yb1);
+    Serial.print( yb1);
     Serial.print( ", ");
     Serial.print( beaconPacket.zb1);
     Serial.print( ", ");
     Serial.print( "0x");
     Serial.print( beaconPacket.reserved1, HEX);
     Serial.print( ", ");
-    Serial.print( beaconPacket.beacon2);
+    Serial.print( "beacon2: ");
     Serial.print( ", ");
-    Serial.print( beaconPacket.xb2);
+    Serial.print( xb2);
     Serial.print( ", ");
-    Serial.print( beaconPacket.yb2);
+    Serial.print( yb2);
     Serial.print( ", ");
     Serial.print( beaconPacket.zb2);
     Serial.print( ", ");
     Serial.print( "0x");
     Serial.print( beaconPacket.reserved2, HEX);
     Serial.print( ", ");
-    Serial.print( beaconPacket.beacon3);
+    Serial.print( "beacon3: ");
     Serial.print( ", ");
-    Serial.print( beaconPacket.xb3);
+    Serial.print( xb3);
     Serial.print( ", ");
-    Serial.print( beaconPacket.yb3);
+    Serial.print( yb3);
     Serial.print( ", ");
     Serial.print( beaconPacket.zb3);
     Serial.print( ", ");
     Serial.print( "0x");
     Serial.print( beaconPacket.reserved3, HEX);
     Serial.print( ", ");
-    Serial.print( beaconPacket.beacon4);
+    Serial.print( "beacon4: ");
     Serial.print( ", ");
-    Serial.print( beaconPacket.xb4);
+    Serial.print( xb4);
     Serial.print( ", ");
-    Serial.print( beaconPacket.yb4);
+    Serial.print( yb4);
     Serial.print( ", ");
     Serial.print( beaconPacket.zb4);
     Serial.print( ", ");
@@ -702,12 +766,20 @@ return sum.w;
 //  END OF MARVELMIND HEDGEHOG RELATED PART //
 //////////////////////////////////////////////
 
-////////////////////////////
-// DO NOT EDIT MAIN SETUP //
-////////////////////////////
+///////////////////////////////
+// Minimize main setup edits //
+///////////////////////////////
 
 void setup()
 {
+  // Bluetooth and LED setup
+  pinMode(ledPinRed, OUTPUT);
+  pinMode(ledPinYellow, OUTPUT);
+  pinMode(ledPinGreen, OUTPUT);
+  digitalWrite(ledPinRed, HIGH);
+  digitalWrite(ledPinYellow, LOW);
+  digitalWrite(ledPinGreen, LOW);
+  Serial3.begin(BTBAUDRATE); // bluetooth baud rate
   Serial.begin(ARBAUDRATE);
   if ( OPMODE & DEBUG) {
     while (!Serial) {;} // wait for serial port to connect.
@@ -716,16 +788,50 @@ void setup()
     Serial.flush();
 
   }
+  ////////////////////////
+  // Setup Kangaroo
+  // COMMENT OUT FOR NON MOTOR TESTING
+  ////////////////////////
+  
   Serial2.begin(KRBAUDRATE);
+  Drive.start();
+  Turn.start();
+  Drive.si(0);
+  Turn.si(0);
+  
   //  and replace references to MMSerial with Serial1 and vice-versa
   Serial1.begin(MMBAUDRATE);  //use Serial1 to avoid the SoftwareSerial library
-
+  
   setup_hedgehog(); //MMSerial hedgehog support initialize
 
   microsPrevious = 0;
   packet_received= 0;
 
   if ( OPMODE & DEBUG) { Serial.println( "Setup done."); }//Serial.flush();}
+  digitalWrite(ledPinRed, LOW);
+  digitalWrite(ledPinYellow, HIGH);
+  
+  ////////////////////////////////////
+  // Endpoint and Checkpoint print
+  ///////////////////////////////////////
+
+  
+//  Serial.print("EndPoint 1x = ");
+//  Serial.print(End[1].x);
+//  Serial.print(", ");
+//  Serial.print("EndPoint 2 = ");
+//  Serial.print(End[2].x);
+//  Serial.print(", ");
+//  Serial.print("EndPoint 3 = ");
+//  Serial.println(End[3].x);
+//  Serial.print("Checkpoint 1x = ");
+//  Serial.print(CP[1].x);
+//  Serial.print(", ");
+//  Serial.print("Checkpoint 2x = ");
+//  Serial.print(CP[2].x);
+//  Serial.print(", ");
+//  Serial.print("Checkpoint 3x = ");
+//  Serial.print(CP[3].x);
 } // end main setup
 
 ///////////////////////////
@@ -737,17 +843,36 @@ void loop() {
   //  use microsecond/time passage check instead
   //  if it's not time for work, then skip hedge loop
   //if ( OPMODE & DEBUG ) { Serial.println( "L+"); Serial.flush();}
+  // Bluetooth section
+  if(Serial3.available() > 0){ // Checks whether data is comming from the serial port
+        state = Serial3.read(); // Reads the data from the serial port
+        // Serial.println(state);
+  }
+  if (state == 112) {
+        digitalWrite(ledPinGreen, HIGH);
+        digitalWrite(ledPinYellow, LOW);
+        // Serial.println("LED: ON");
+        state = 0;
+        Status = 1;
+  }
+  else if (state == 116) {
+        digitalWrite(ledPinGreen, LOW); // Turn LED OFF
+        digitalWrite(ledPinYellow, HIGH);
+        // Serial.println("LED: OFF"); // Send back, to the phone, the String "LED: ON"
+        state = 0;
+        Status = 0;
+  } // end bluetooth section
+  
   microsNow = micros();
   if ((microsNow - microsPrevious) >= microsPerReading) {
     if (firstLoop){
       loop_hedgehog();
       xOld = dataPacket.x;  // set old x and y position as hedge position after update for first hedge loop
-      yOld = dataPacket.y;
+      yOld = dataPacket.y; // 
       firstLoop = 0;
     }
     else{
-      xOld = dataPacket.x; // set old x and y position as hedge position before update
-      yOld = dataPacket.y;
+//      Serial.print("Status"); Serial.println(Status);
       loop_hedgehog();// MMSerial hedgehog service loop
     }
 
@@ -769,36 +894,53 @@ void loop() {
 // MOVEMENT AND PATH CREATION FUNCTIONS //
 //////////////////////////////////////////
 
-void RowCreate(){ // TODO use unit vectors instead of trig
+void RowCreate(){ 
 // PathCreate Creates a series of checkpoints along the current path that the mower should follow. 
 // The path will be created 
-  // NOTE: Need to Clear CPs array evertime this command is initialized  
-  long RowMag = (sqrt( (Endx-dataPacket.x)^2 + (Endy-dataPacket.y)^2 ));
-  long theta = round(acos((Endx-dataPacket.x)/RowMag)); //Radians
+  double RowMag = sqrt( pow((Endx-dataPacket.x),2) + pow((Endy-dataPacket.y),2));
+  //long theta = round(acos((Endx-dataPacket.x)/RowMag)); //Radians
   NumberOfCPs = ceil(RowMag / separation);   // Number of Checkpoints along the path
   // Need to Round up every time
+//  Serial.print("Number of CheckPoints = ");
+//  Serial.println(NumberOfCPs);
+//  Serial.println(" ");
+  double xUnit = (double)(Endx - dataPacket.x)/RowMag;
+  double yUnit = (double)(Endy - dataPacket.y)/RowMag;
+//  Serial.print("X Unit Vector = "); Serial.println(xUnit);
+//  Serial.print("Y Unit Vector = "); Serial.println(yUnit);
+//  Serial.println(" ");
+//  Serial.print("End Position (X) = "); Serial.println(Endx);
+//  Serial.print("Current Position (X) = "); Serial.println(dataPacket.x);
+//  Serial.println(" ");
+//  Serial.print("End Position (Y) = "); Serial.println(Endy);
+//  Serial.print("Current Position (Y) = "); Serial.println(dataPacket.y);
   
-  // RESET CP.x & CP.y to all Zeros
-//  memset(CP.x, 0, sizeof(CP.x));
-//  memset(CP.y, 0, sizeof(CP.y));
+  
  
-  for(int ii=0; ii<=NumberOfCPs; ii++){
+  for(int ii=0; ii+1<=NumberOfCPs; ii++){
 
     // NOTE: May need to update with tolerances later
         
     if(ii == 0){ 
       // first point 
-      CP[ii].x = dataPacket.x + separation*cos(theta);
-      CP[ii].y = dataPacket.y + separation*sin(theta);    
-    } else if(ii >= NumberOfCPs){
+      CP[ii].x = (double) dataPacket.x + separation*xUnit;
+      CP[ii].y = (double) dataPacket.y + separation*yUnit;    
+    } else if(ii+1 >= NumberOfCPs){
       // End Point
       CP[ii].x = Endx;
       CP[ii].y = Endy;
     } else{
        // everything after first point
-      CP[ii].x = CP[ii-1].x + separation*cos(theta);
-      CP[ii].y = CP[ii-1].y + separation*sin(theta);      
-    }       
+      CP[ii].x = (double) CP[ii-1].x + separation*xUnit;
+      CP[ii].y = (double) CP[ii-1].y + separation*yUnit;      
+    }  
+//    Serial.println(" ");
+//    Serial.print("Checkpoint.x = ");
+//    Serial.print(CP[ii].x);
+//    Serial.print(", ");
+//    Serial.print("Checkpoint.y = ");
+//    Serial.print(CP[ii].y);  
+       
   }
   Cpx=CP[0].x;
   Cpy=CP[0].y;
@@ -810,18 +952,12 @@ void RowCreate(){ // TODO use unit vectors instead of trig
 void turnOneEighty(){
   // Turning function for mower at end of each lap
 
-  // This section may not be needed later
-  //double ratio = 60; // Ticks / cycle
-  //double diameter = 31.75; // cm
-  //int dist = 95; //cm
-  //double travel = 
-
-  int Travel = round(90 * TicksPerDegree); // Ticks to make a 90 deg turn
-    
+  long Travel = round(90 * TicksPerDegree); // Ticks to make a 90 deg turn
+   
   // Equivalent of If statement
   // Syntax 'ConditionalStatement' ? 'ValueifTrue' : 'ValueifFalse'
   Travel = LapNumber % 2 == 0 ? Travel : -1 * Travel;
-
+    Serial.print(" Tick for 90 degree turn = "); Serial.println(Travel);
   // Initiate 90 Deg Turn
   Turn.pi(Travel,encoderSpeed).wait(); // Initiate Turn
  
@@ -854,9 +990,9 @@ void AdjustPos(){
   //given a theta in degrees
   //turn by desired amount
 
-  int Travel = round(ta * TicksPerDegree);
-  Turn.pi(Travel,encoderSpeed).wait(); // Initiate Turn
-  Forward(moveDist); //start forward protocol after adjustment
+  long Travel = round(ta * TicksPerDegree);
+  Turn.pi( Travel, encoderSpeed).wait(); // Initiate Turn
+  Forward( moveDist ); //start forward protocol after adjustment
   return;
 }
 
@@ -865,21 +1001,37 @@ void checkIncrementCP(){
   // lapnumber = row number of CP matrix
   //Check w/ tolerance to Cpx & Cpy
   
-  long mag = sqrt((Cpx-dataPacket.x)^2+(Cpy-dataPacket.y)^2); // Distance to CP
+  long mag = round(sqrt(pow((Cpx-dataPacket.x),2)+pow((Cpy-dataPacket.y),2))); // Distance to CP
   if (mag <= tolerance){ //if distance between check point and current pos is less than tolerance do stuff
     //increment to next CP
     currentC++;  //increment Checkpoint array index
     Cpx=CP[currentC].x; // Change to next CP x value
     Cpy=CP[currentC].y; // change to next CP y value
+    
+//    Serial.print("Distance between Position and CP = ");Serial.println(mag);
+//    Serial.print("Current X Point = "); Serial.println(Cpx);
+//    Serial.print("Current Y Point = "); Serial.println(Cpy);
   }
   return;
 }
 
-void thetaAdjust(){
-  float rActual = sqrt( (dataPacket.x - xOld)^2 + (dataPacket.y - yOld)^2); // distance traveled from last measurement
-  float rDes = sqrt( (Cpx - dataPacket.x)^2 + (Cpy - dataPacket.y)^2); // distance to CP
-  float tDes = asin( (Cpy - dataPacket.y)/rDes) * 180/Pi; //desired theta based on position and next Checkpoint in degrees
-  float tActual = 180 - asin( (dataPacket.y - yOld)/rActual )*180/Pi; //actual trajectory theta in degrees
+void thetaAdjust(){ // BIG TODO This is wrong
+  double rActual = sqrt( pow((dataPacket.x - xOld),2) + pow((dataPacket.y - yOld),2)); // distance traveled from last measurement
+  double UnitXActual = ((dataPacket.x - xOld))/rActual;
+  double UnitYActual = ((dataPacket.y - yOld))/rActual;
+  double tActual = atan2(UnitYActual, UnitXActual)*180/Pi;
+  
+  double rDes = sqrt( pow((Cpx - dataPacket.x),2) + pow((Cpy - dataPacket.y),2)); // distance to CP
+  double UnitXDes = (Cpx - dataPacket.x)/rDes;
+  double UnitYDes = (Cpy - dataPacket.y)/rDes;
+  double tDes = atan2(UnitYDes, UnitXDes)*180/Pi;
+  
+//  double tDes = asin( (Cpy - dataPacket.y), rDes) * 180/Pi; //desired theta based on position and next Checkpoint in degrees
+//  double tActual = 180 - asin( (dataPacket.y - yOld), rActual )*180/Pi; //actual trajectory theta in degrees
+//  Serial.print("(Adjust) actual distance = ");Serial.println(rActual);
+//  Serial.print("Distance between Position and CP = ");Serial.println(rDes);
+//  Serial.print("Distance between Position and CP = ");Serial.println(tDes);
+//  Serial.print("Distance between Position and CP = ");Serial.println(tActual);
   ta = round( tDes - tActual ); //theta to adjust by to point toward Checkpoint
   return; // Angle to adjust by in degrees
 }
@@ -889,90 +1041,102 @@ void offsetCreate(){ // Create offset positions between beacons for path creatio
   // xb1, yb1, xb2, yb2, xb3, yb3, xb4, yb4 Beacon positions
   // r=offset/sqrt(2)
   // x1 x2 x3 x4 y1 y2 y3 y4  Offset beacon positions
-  long r = offset/sqrt(2);
-  long magOneTwo = sqrt((xb2-xb1)^2+(yb2-yb1)^2); 
-  long magThreeFour = sqrt((xb4-xb3)^2+(yb4-yb3)^2);
-
+  float r = offset/sqrt(2);
+  float magOneTwo = sqrt(pow((xb2-xb1),2)+pow((yb2-yb1),2)); 
+  float magThreeFour = sqrt(pow((xb4-xb3),2)+pow((yb4-yb3),2));
+  
   // Beacon unit vectors
-  float TxOneTwo = (xb2-xb1)/magOneTwo; 
-  float TyOneTwo = (yb2-yb1)/magOneTwo;
-  float TxThreeFour = (xb4-xb3)/magThreeFour; 
-  float TyThreeFour = (yb4-yb3)/magThreeFour;
+  double TxOneTwo = (double)(xb2-xb1)/magOneTwo; 
+  double TyOneTwo = (double)(yb2-yb1)/magOneTwo;
+  double TxThreeFour = (double)(xb4-xb3)/magThreeFour; 
+  double TyThreeFour = (double)(yb4-yb3)/magThreeFour;
+  
 
   // Psuedo 
   
 //  position along 1-2 and 3-4
-  long x1prime = xb1 + r*TxOneTwo;
-  long y1prime = yb1 + r*TyOneTwo;
-  long x2prime = xb2 - r*TxOneTwo;
-  long y2prime = yb2 - r*TyOneTwo; 
-  long x3prime = xb3 + r*TxThreeFour;
-  long y3prime = yb3 + r*TyThreeFour;
-  long x4prime = xb4 - r*TxThreeFour;
-  long y4prime = yb4 - r*TyThreeFour;
+  float x1prime = xb1 + r*TxOneTwo;
+  float y1prime = yb1 + r*TyOneTwo;
+  float x2prime = xb2 - r*TxOneTwo;
+  float y2prime = yb2 - r*TyOneTwo; 
+  float x3prime = xb3 + r*TxThreeFour;
+  float y3prime = yb3 + r*TyThreeFour;
+  float x4prime = xb4 - r*TxThreeFour;
+  float y4prime = yb4 - r*TyThreeFour;
 
-  long magOneFour = sqrt((x4prime - x1prime)^2 + (y4prime - y1prime)^2);
-  long magTwoThree = sqrt((x3prime - x2prime)^2 + (y3prime - y2prime)^2);
-
+  float magOneFour = sqrt(pow((x4prime - x1prime),2) + pow((y4prime - y1prime),2));
+  float magTwoThree = sqrt(pow((x3prime - x2prime),2) + pow((y3prime - y2prime),2));
+  
   // Psuedo Offset Unit Vectors
-  float TxOneFour = (x4prime - x1prime)/magOneFour;
-  float TyOneFour = (y4prime - y1prime)/magOneFour;
-  float TxTwoThree = (x3prime - x2prime)/magTwoThree;
-  float TyTwoThree = (y3prime - y2prime)/magTwoThree;
+  double TxOneFour = (double)(x4prime - x1prime)/magOneFour;
+  double TyOneFour = (double)(y4prime - y1prime)/magOneFour;
+  double TxTwoThree = (double)(x3prime - x2prime)/magTwoThree;
+  double TyTwoThree = (double)(y3prime - y2prime)/magTwoThree;
 
   // Final offset positions along 1prime - 4prime and 2prime - 3prime
-  x1 = x1prime + r*TxOneFour;
-  y1 = y1prime + r*TyOneFour;
-  x4 = x4prime - r*TxOneFour;
-  y4 = y4prime - r*TyOneFour;
-  x2 = x2prime + r*TxTwoThree;
-  y2 = y2prime + r*TyTwoThree;
-  x3 = x3prime - r*TxTwoThree;
-  y3 = y3prime - r*TyTwoThree;
-
+  xoff1 = (x1prime + r*TxOneFour);
+  yoff1 = (y1prime + r*TyOneFour);
+  xoff4 = (x4prime - r*TxOneFour);
+  yoff4 = (y4prime - r*TyOneFour);
+  xoff2 = (x2prime + r*TxTwoThree);
+  yoff2 = (y2prime + r*TyTwoThree);
+  xoff3 = (x3prime - r*TxTwoThree);
+  yoff3 = (y3prime - r*TyTwoThree);
   return;
 }
 
 // TODO call this in setup_hedgehog
 void createEndPoints() {
-  long magOneFour = sqrt((x4-x1)^2+(y4-y1)^2);
-  long magTwoThree = sqrt((x3-x2)^2+(y3-y2)^2);
-  
-  if (magOneFour >= magTwoThree){
-    numberOfRows = ceil(magOneFour/rowOffset);  
+  float magOneFourEnd = sqrt(pow((xoff4-xoff1),2)+pow((yoff4-yoff1),2));
+  float magTwoThreeEnd = sqrt(pow((xoff3-xoff2),2)+pow((yoff3-yoff2),2));
+
+  if (magOneFourEnd >= magTwoThreeEnd){
+    numberOfRows = ceil(magTwoThreeEnd/rowOffset);  
   } else {
-    numberOfRows = ceil(magTwoThree/rowOffset);
+    numberOfRows = ceil(magOneFourEnd/rowOffset);
   }
+
   
   // unit vectors between 1-4 and 2-3
-  float TxOneFour = (x4 - x1)/magOneFour; 
-  float TyOneFour = (y4 - y1)/magOneFour;
-  float TxTwoThree = (x3 - x2)/magTwoThree;
-  float TyTwoThree = (y3 - y2)/magTwoThree;  
+  double TxOneFourEnd = (double)(xoff4 - xoff1)/magOneFourEnd; 
+  double TyOneFourEnd = (double)(yoff4 - yoff1)/magOneFourEnd;
+  double TxTwoThreeEnd = (double)(xoff3 - xoff2)/magTwoThreeEnd;
+  double TyTwoThreeEnd = (double)(yoff3 - yoff2)/magTwoThreeEnd;  
+
 
   //odd number of rows end point on 2-3 vector
   //even number of rows end point on 1-4 vector
   for (int ii=0; ii <= numberOfRows; ii++){
     if (ii==0) {
-      End[ii].x = x2;
-      End[ii].y = y2;
+      End[ii].x = xoff2;
+      End[ii].y = yoff2;  
     } else if (ii == 1){
-      End[ii].x = x1 + rowOffset*TxOneFour; // 2nd endpointx
-      End[ii].y = y1 + rowOffset*TyOneFour; // 2nd endpointy
+      End[ii].x = xoff1 + rowOffset*TxOneFourEnd; // 2nd endpointx
+      End[ii].y = yoff1 + rowOffset*TyOneFourEnd; // 2nd endpointy
     } else if (ii < numberOfRows && ii % 2 == 0){ // for all other even row numbers
-      End[ii].x = End[ii-2].x + 2*rowOffset*TxTwoThree;
-      End[ii].y = End[ii-2].y + 2*rowOffset*TyTwoThree;
+      End[ii].x = End[ii-2].x + 2*rowOffset*TxTwoThreeEnd;
+      End[ii].y = End[ii-2].y + 2*rowOffset*TyTwoThreeEnd;
     } else if (ii < numberOfRows && ii % 2 != 0){ // for all other odd row numbers
-      End[ii].x = End[ii-2].x + 2*rowOffset*TxOneFour;
-      End[ii].y = End[ii-2].y + 2*rowOffset*TyOneFour;
+      End[ii].x = End[ii-2].x + 2*rowOffset*TxOneFourEnd;
+      End[ii].y = End[ii-2].y + 2*rowOffset*TyOneFourEnd;
     } else if (ii >= numberOfRows && (numberOfRows) % 2 == 0){ // Last row end point if # of rows is even
-      End[ii].x = x3; 
-      End[ii].y = y3;
+      End[ii].x = xoff3; 
+      End[ii].y = yoff3;
     } else if (ii >= numberOfRows && (numberOfRows) % 2 != 0){ // Last row end point if # of rows is odd
-      End[ii].x = x4;
-      End[ii].y = y4;
+      End[ii].x = xoff4;
+      End[ii].y = yoff4;
     }// conditional end
+    
+//    Serial.println(" ");
+//    Serial.print("End.x = ");
+//    Serial.print(End[ii].x);
+//    Serial.print(", ");
+//    Serial.print("End.y = ");
+//    Serial.print(End[ii].y);
+    
   } // loop end
+   
+  
   Endx=End[0].x;
   Endy=End[0].y;
   return;
