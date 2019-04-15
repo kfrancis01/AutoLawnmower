@@ -78,7 +78,7 @@ long separation = 2000; // Separation Distance between checkpoints
 long Cpx; // checkpoint X
 long Cpy; // Checkpoint Y
 long tolerance = 250; // 5cm Navigation Tolerance
-long angleTolerance = 15; // adjustment angle tolerance
+long angleTolerance = 10; // adjustment angle tolerance
 bool firstLoop = 1; // boolean for first time through loop
 long xb1, xb2, xb3,xb4,yb1,yb2,yb3,yb4; //beacon positions
 int ta; // turn angle global variable
@@ -593,7 +593,7 @@ if (Status == 1){
       timeDelay = 1e6;
   } // end thetaAdjust Statement
   
-  if(ta >= angleTolerance){ 
+  if(abs(ta) >= angleTolerance){ 
     AdjustPos(); // Make Adjustment based on thetaAdjust
     ta = 0;
     
@@ -1036,7 +1036,8 @@ void checkIncrementCP(){
     N = 1;
     xOld = dataPacket.x; // set old x and y position as hedge position before update
     yOld = dataPacket.y;
-        
+
+      Serial.print("CP = ");Serial.println(currentC);  
 //    Serial.print("Distance between Position and CP = ");Serial.println(mag);
 //    Serial.print("Current X Point = "); Serial.println(Cpx);
 //    Serial.print("Current Y Point = "); Serial.println(Cpy);
@@ -1057,10 +1058,10 @@ void thetaAdjust(){ // BIG TODO This is wrong
   
 //  double tDes = asin( (Cpy - dataPacket.y), rDes) * 180/Pi; //desired theta based on position and next Checkpoint in degrees
 //  double tActual = 180 - asin( (dataPacket.y - yOld), rActual )*180/Pi; //actual trajectory theta in degrees
-//  Serial.print("(Adjust) actual distance = ");Serial.println(rActual);
-//  Serial.print("Distance between Position and CP = ");Serial.println(rDes);
-//  Serial.print("Distance between Position and CP = ");Serial.println(tDes);
-//  Serial.print("Distance between Position and CP = ");Serial.println(tActual);
+  Serial.print("(Adjust) actual distance = ");Serial.println(rActual);
+  Serial.print("Distance between Position and CP = ");Serial.println(rDes);
+  Serial.print("Angle between Position and CP = ");Serial.println(tDes);
+  Serial.print("Angle between Position and CP = ");Serial.println(tActual);
   ta = round( tDes - tActual ); //theta to adjust by to point toward Checkpoint
   return; // Angle to adjust by in degrees
 }
