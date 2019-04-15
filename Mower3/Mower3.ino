@@ -101,6 +101,9 @@ double TicksPerDegree = 1.56; // Ratio of Ticks to the degrees turned
 double TicksPerCM = 4.85; // pulses per centimeter
 long xOld; // last x position
 long yOld; // last y position
+unsigned long timeDelay;
+int N;
+bool chops = 0;
 
 KangarooSerial  K(Serial2);
 KangarooChannel Drive(K, 'D');
@@ -555,10 +558,17 @@ void loop_hedgehog() {
   //This may have to be trial and error.
 
 if (Status == 1){
-  if(currentC == 0){
+  if(chops == 0){
+    chops = 1;
     RowCreate(); // Create Path for the mower to follow via several checkpoints with equal spacing
     Forward(moveDist); // Move mower forward by small amount
     microsLast = micros();
+    
+    // Initialize Rolling Average Position
+    N = 1;
+    xOld = dataPacket.x; // set old x and y position as hedge position before update
+    yOld = dataPacket.y;
+    timeDelay = 2e6;
   }
 
 /////////////////////
@@ -567,17 +577,30 @@ if (Status == 1){
 ///////////////////
 
     checkIncrementCP(); // Check if the mower position is near Checkpoint positions
+    // TODO MAYBE Reset Rolling Average Position whenever CP is incremented
 
-  if ((microsNow - microsLast) >= 1e6) { // Calculate thetaAdjust every 10 cycles, or can make this a constant time interval
+    // Update Rolling Average Position
+      N++;
+      xOld = (xOld + dataPacket.x)/N;
+      yOld = (yOld + dataPacket.y)/N;
+      
+  if ((microsNow - microsLast) >= timeDelay) { // Calculate thetaAdjust every 10 cycles, or can make this a constant time interval
       thetaAdjust(); // check to see if the moweer needs to adjust on its path, and by how much
       microsLast = micros();
-      xOld = dataPacket.x; // set old x and y position as hedge position before update
-      yOld = dataPacket.y;
+//      xOld = dataPacket.x; // set old x and y position as hedge position before update
+//      yOld = dataPacket.y;
+      
+      timeDelay = 1e6;
   } // end thetaAdjust Statement
   
   if(ta >= angleTolerance){ 
     AdjustPos(); // Make Adjustment based on thetaAdjust
     ta = 0;
+    
+    // Reset Rolling Average Position
+    N = 1;
+    xOld = dataPacket.x; // set old x and y position as hedge position before update
+    yOld = dataPacket.y;
   }  // end Adjustment statement
 
 ////////////////
@@ -587,6 +610,7 @@ if (Status == 1){
 
   if (currentC >= NumberOfCPs){ // Conditional telling if current checkpoint is the Endpoint, and we're at it
         turnOneEighty;  
+        chops = 0;
         currentC = 0; // Reinitialize the Checkpoints
     } else {  // TODO [maybe] insert some conditional to control forward movement
         Forward(moveDist); // TODO make travel distance less than checkpoint tolerance but great enough to avoid choppy movement
@@ -1008,6 +1032,11 @@ void checkIncrementCP(){
     Cpx=CP[currentC].x; // Change to next CP x value
     Cpy=CP[currentC].y; // change to next CP y value
     
+    // Reset Rolling Average Position
+    N = 1;
+    xOld = dataPacket.x; // set old x and y position as hedge position before update
+    yOld = dataPacket.y;
+        
 //    Serial.print("Distance between Position and CP = ");Serial.println(mag);
 //    Serial.print("Current X Point = "); Serial.println(Cpx);
 //    Serial.print("Current Y Point = "); Serial.println(Cpy);
@@ -1141,3 +1170,9 @@ void createEndPoints() {
   Endy=End[0].y;
   return;
 } // EndPoint function end
+
+double ApproxRollingAverage(double avg, double newsample, int N) {
+  avg += avg / N;
+  N ++;
+  return avg;
+}
