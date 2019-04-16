@@ -83,19 +83,19 @@ bool beaconRead;
 int currentC = 0; // index for current checkpoint in array
 int LapNumber = 0; // incremental variable
 CheckPoint CP[50]; // CheckPoint array
-long separation = 200; // Separation Distance between checkpoints
+long separation = 2000; // Separation Distance between checkpoints
 long Cpx; // checkpoint X
 long Cpy; // Checkpoint Y
-long tolerance = 100; // 5cm Navigation Tolerance
+long tolerance = 300; // 5cm Navigation Tolerance
 long angleTolerance = 15; // adjustment angle tolerance
 bool firstLoop = 1; // boolean for first time through loop
 long xb1, xb2, xb3,xb4,yb1,yb2,yb3,yb4; //beacon positions
 int ta; // turn angle global variable
-long offset = 100; //total offset from beacon positions
+long offset = 1000; //total offset from beacon positions
 long xoff1, xoff2, xoff3, xoff4, yoff1, yoff2, yoff3, yoff4; // offset beacon positions
 EndPoint End[50]; // EndPoint array
 // EndPoint[20] = { 0 }; ^^^ Could be used instead of above line
-long rowOffset = 100; // separation between rows (28cm for now)
+long rowOffset = 280; // separation between rows (28cm for now)
 long Endx, Endy; //End of row position
 const double Pi = 3.1415926;
 int numberOfRows = 0;
