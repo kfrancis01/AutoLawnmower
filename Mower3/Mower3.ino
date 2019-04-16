@@ -3,11 +3,13 @@
 #include "Mower3.h"
 #include <Kangaroo.h>
 //global constants, these do not change during a given execution
+
+// LED light pin numbers
 #define ledPinRed 13
 #define ledPinYellow 12
 #define ledPinGreen 11
 
-
+// Bluetooth Variables
 int state = 0;
 int Status = 0;
 
