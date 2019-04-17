@@ -2,6 +2,7 @@
 // Serial1 and Serial2 used as SoftwareSerial for an Arduino Mega
 #include "Mower3.h"
 #include <Kangaroo.h>
+
 //global constants, these do not change during a given execution
 #define ledPinRed 13
 #define ledPinYellow 12
@@ -23,15 +24,16 @@ const int DEBUG = 1;       //set to 0 for production, 1 will give Serial monitor
 const int OPMODE=DEBUG;  //should likely be all 0's for full up production use.
 
 const long ARBAUDRATE= 57600;
-const unsigned long microsPerReading= 100;  //number of microseconds between work efforts
+const unsigned long microsPerReading= 200;  //number of microseconds between work efforts  TODO test if changing this between 100 - 300 microseconds changes anything
 //as measured within loop()
 
 //global variables available everywhere to everything
 unsigned long microsPrevious= 0;    //these 2 are used to measure time between work efforts
 unsigned long microsNow= 0;
 
-/////////////////////////////////////////////
-//  MARVELMIND HEDGEHOG RELATED PARTI
+/////////////////////////////////////////
+//  MARVELMIND HEDGEHOG RELATED PARTI  //
+/////////////////////////////////////////
 
 //buffer is extra large so we can at least pull in one full and complete packet,
 //    no matter where in the buffer it starts, other bytes are ignored/discarded
@@ -110,8 +112,10 @@ int encoderSpeed = 40; // encoder ticks per second
 long angleTolerance = 8; // adjustment angle tolerance Should be (~ 8 degrees at encoderSpeed = 30 ticks/s, ~ 4 degrees at encoderSpeed = 60 ticks/s, ~2.5 degrees at encoderSpeed = 90 ticks/s) 
 double TicksPerDegree = 3.13; // Ratio of Ticks to the degrees turned (was 1.56)
 double TicksPerCM = 4.85; // pulses per centimeter
-long xOld; // last x position
-long yOld; // last y position
+long xNew = 0; // last x position (if newest position is bad)
+long yNew = 0; // lasy y position (if newest position is bad)
+long xOld; // old x position
+long yOld; // old y position
 unsigned long timeDelay;
 bool chops = 0;
 
@@ -572,6 +576,15 @@ void loop_hedgehog() {
   //                                         //
   /////////////////////////////////////////////
 
+if (abs(dataPacket.x) > 100000 || abs(dataPacket.y) > 100000 || abs(dataPacket.z) > 100000){
+  dataPacket.x = xNew;
+  dataPacket.y = yNew;
+} else {
+  xNew = dataPacket.x;
+  yNew = dataPacket.y;
+}
+
+
 if (Status == 1 && TurningVar == 0){ // Bluetooth activation (Status = 1 -> Green; Status = 0 -> Red)
   if(chops == 0){ // If first loop of a new row
     chops = 1; // random incremental value for first loop of a new row
@@ -582,7 +595,10 @@ if (Status == 1 && TurningVar == 0){ // Bluetooth activation (Status = 1 -> Gree
     yOld = dataPacket.y; // Old position X = current position X
     xOld = dataPacket.x; // Old position Y = current position Y
     timeDelay = 6e6; // 5 seconds in microseconds
+    
+    if (OPMODE & DEBUG) {
     Serial.print("Lap Number = "); Serial.println(LapNumber);
+    }
   }
 
   checkIncrementCP(); // Check if the mower position is near Checkpoint positions
@@ -593,10 +609,12 @@ if (Status == 1 && TurningVar == 0){ // Bluetooth activation (Status = 1 -> Gree
       microsLast = micros();
       xOld = dataPacket.x; // set old x and y position as hedge position before update
       yOld = dataPacket.y;
-      
+
+      if (OPMODE & DEBUG) {
       Serial.print("CPx = "); Serial.print(Cpx); Serial.print(",  "); Serial.print("CPy = "); Serial.println(Cpy); 
       Serial.print("CurrentC = "); Serial.println(currentC);
       Serial.print("Number of CPs = "); Serial.println(NumberOfCPs);
+      }
       
       timeDelay = 6e6;
   } // end thetaAdjust Statement
@@ -604,13 +622,19 @@ if (Status == 1 && TurningVar == 0){ // Bluetooth activation (Status = 1 -> Gree
   if(abs(ta) >= angleTolerance){ 
     AdjustPos(); // Make Adjustment based on thetaAdjust
     microsLast = micros();
+
+    if (OPMODE & DEBUG) {
     Serial.print(" Adjusting Position by = "); Serial.print(ta); Serial.println(" degrees");
+    }
+    
     ta = 0;
   }  // end Adjustment statement
 
 
   if (currentC >= NumberOfCPs){ // Conditional telling if current checkpoint is the Endpoint, and we're at it
-    Serial.println(" FULL TURN ");
+    if (OPMODE & DEBUG) {
+      Serial.println(" FULL TURN ");
+    }
         turnOneEighty();
         microsLast = micros();     
         chops = 0;
@@ -618,7 +642,7 @@ if (Status == 1 && TurningVar == 0){ // Bluetooth activation (Status = 1 -> Gree
         
     } else {  
         Forward(moveDist); 
-  }
+  } // end turn criteria
 } // end Bluetooth Status
 
 
@@ -824,10 +848,10 @@ void setup()
     Serial.flush();
 
   }
-  ////////////////////////
-  // Setup Kangaroo
-  // COMMENT OUT FOR NON MOTOR TESTING
-  ////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////
+  // Setup Kangaroo                                                                //
+  // COMMENT OUT FOR NON MOTOR TESTING ALONG WITH MOVEMENT CALLS IN loop_hedgehog  //
+  ///////////////////////////////////////////////////////////////////////////////////
   
   Serial2.begin(KRBAUDRATE);
   Drive.start();
@@ -850,7 +874,8 @@ void setup()
 ////////////////////////////////////////
 // Endpoint and Checkpoint Test Print //
 ////////////////////////////////////////
-  
+
+//  if (OPMODE & DEBUG) {
 //  Serial.print("EndPoint 1x = ");
 //  Serial.print(End[1].x);
 //  Serial.print(", ");
@@ -867,6 +892,8 @@ void setup()
 //  Serial.print(", ");
 //  Serial.print("Checkpoint 3x = ");
 //  Serial.print(CP[3].x);
+//  }
+  
 } // end main setup
 
 
@@ -954,13 +981,16 @@ void RowCreate(){
       CP[ii].x = (double) CP[ii-1].x + separation*xUnit;
       CP[ii].y = (double) CP[ii-1].y + separation*yUnit;      
     }  
+
+    if (OPMODE & DEBUG) {
     Serial.println(" ");
     Serial.print("Checkpoint.x = ");
     Serial.print(CP[ii].x);
     Serial.print(", ");
     Serial.print("Checkpoint.y = ");
     Serial.println(CP[ii].y);  
-       
+    }
+    
   }
   Cpx=CP[0].x;
   Cpy=CP[0].y;
@@ -974,7 +1004,10 @@ void RowCreate(){
 void turnOneEighty(){ // Turning function for mower at end of each lap
   TurningVar = 1;
   long Travel = round(90 * TicksPerDegree); // Ticks to make a 90 deg turn
+
+  if (OPMODE & DEBUG) {
   Serial.print(" Turning Distance = "); Serial.println(Travel);
+  }
   // Equivalent of If statement
   // Syntax 'ConditionalStatement' ? 'ValueifTrue' : 'ValueifFalse'
   Travel = LapNumber % 2 == 0 ? Travel : -1 * Travel;
@@ -991,8 +1024,12 @@ void turnOneEighty(){ // Turning function for mower at end of each lap
   LapNumber++; // Increment Lap Number everytime a full turn occurs
   Endx = End[LapNumber].x;
   Endy = End[LapNumber].y;
+
+  if (OPMODE & DEBUG) {
   Serial.print(" New End.x = "); Serial.println(Endx);
   Serial.print(" New End.y = "); Serial.println(Endy);
+  }
+  
   TurningVar = 0;
   return;
 }
@@ -1012,10 +1049,10 @@ void AdjustPos(){
   //given a theta in degrees
   //turn by desired amount
   
-  if (ta > 0){
-    ta = ta - angleTolerance - 2;
+  if (ta >= 0){
+    ta = ta - angleTolerance + 2;
   }else if (ta < 0){
-    ta = ta + angleTolerance + 2;
+    ta = ta + angleTolerance - 2;
   }
     
   long Travel = round(ta * TicksPerDegree);
@@ -1034,14 +1071,12 @@ void checkIncrementCP(){
   long mag = round(sqrt(pow((Cpx-dataPacket.x),2)+pow((Cpy-dataPacket.y),2))); // Distance to CP
   if (mag <= tolerance){ //if distance between check point and current pos is less than tolerance do stuff
     //increment to next CP
-    Serial.println("CheckPoint Incrementing");
+    if (DEBUG && OPMODE){
+      Serial.println("CheckPoint Incrementing");
+    }
     currentC++;  //increment Checkpoint array index
     Cpx=CP[currentC].x; // Change to next CP x value
     Cpy=CP[currentC].y; // change to next CP y value
-            
-//    Serial.print("Distance between Position and CP = ");Serial.println(mag);
-//    Serial.print("Current X Point = "); Serial.println(Cpx);
-//    Serial.print("Current Y Point = "); Serial.println(Cpy);
   }
   return;
 }
@@ -1060,18 +1095,23 @@ void thetaAdjust(){
   double UnitXDes = (Cpx - dataPacket.x)/rDes;
   double UnitYDes = (Cpy - dataPacket.y)/rDes;
   double tDes = atan2(UnitYDes, UnitXDes)*180/Pi; // Angle of desired trajectory
-  
+
+  if (OPMODE & DEBUG) {
   Serial.print("Distance Traveled = ");Serial.println(rActual);
   Serial.print("Distance to CP = ");Serial.println(rDes);
   Serial.print("Desired Angle = ");Serial.println(tDes);
   Serial.print("Acual Angle = ");Serial.println(tActual);
+  }
   
   ta = round( tDes - tActual ); //theta to adjust by to point toward Checkpoint
 //  if (tDes < 0){
 //    ta = -ta;
 //  }
-  
+
+  if (OPMODE & DEBUG) {
   Serial.print("Adjustment Angle = ");Serial.println(ta);
+  }
+  
   return; // Angle to adjust by in degrees
 }
 
@@ -1166,20 +1206,17 @@ void createEndPoints() { // Creates the end point in x and y for every row endpo
       End[ii].x = xoff4;
       End[ii].y = yoff4;
     }// conditional end
-    
+
+    if (OPMODE & DEBUG) {
     Serial.println(" ");
     Serial.print("End.x = ");
     Serial.print(End[ii].x);
     Serial.print(", ");
     Serial.print("End.y = ");
     Serial.print(End[ii].y);
+    }
     
-  } // loop end
-//  for (int ii=0; ii>= numberOfRows; ii++){
-//    Serial.print(" EndPoint["); Serial.print(ii); Serial.print("].x = "); Serial.println(End[ii].x);
-//    Serial.print(" EndPoint["); Serial.print(ii); Serial.print("].y = "); Serial.println(End[ii].y);
-//  }
-   
+  } // loop end 
   Endx=End[0].x;
   Endy=End[0].y;
   return;
