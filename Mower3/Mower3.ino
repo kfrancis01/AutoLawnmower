@@ -107,7 +107,7 @@ unsigned long microsLast = 0;
 // Movement Variables
 bool TurningVar = 0;
 int encoderSpeed = 40; // encoder ticks per second
-long angleTolerance = 8; // adjustment angle tolerance Should be (~ 8 degrees at encoderSpeed = 30 ticks/s, ~ 4 degrees at encoderSpeed = 60 ticks/s, ~2.5 degrees at encoderSpeed = 90 ticks/s) 
+long angleTolerance = 10; // adjustment angle tolerance Should be (~ 8 degrees at encoderSpeed = 30 ticks/s, ~ 4 degrees at encoderSpeed = 60 ticks/s, ~2.5 degrees at encoderSpeed = 90 ticks/s) 
 double TicksPerDegree = 3.13; // Ratio of Ticks to the degrees turned (was 1.56)
 double TicksPerCM = 4.85; // pulses per centimeter
 long xOld; // last x position
@@ -1013,9 +1013,9 @@ void AdjustPos(){
   //turn by desired amount
   
   if (ta > 0){
-    ta = ta - angleTolerance - 2;
+    ta = ta - angleTolerance + 2;
   }else if (ta < 0){
-    ta = ta + angleTolerance + 2;
+    ta = ta + angleTolerance - 2;
   }
     
   long Travel = round(ta * TicksPerDegree);
