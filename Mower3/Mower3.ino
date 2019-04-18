@@ -1067,9 +1067,14 @@ void thetaAdjust(){
   Serial.print("Acual Angle = ");Serial.println(tActual);
   
   ta = round( tDes - tActual ); //theta to adjust by to point toward Checkpoint
-//  if (tDes < 0){
-//    ta = -ta;
-//  }
+  
+  if(abs(ta) > 180) {  // makes sure that the angle of adjustment is always the shortest distance
+    if (ta < 0){
+      ta = ta + 360;
+    } else if (ta > 0){
+      ta = ta - 360;
+    }
+  }
   
   Serial.print("Adjustment Angle = ");Serial.println(ta);
   return; // Angle to adjust by in degrees
